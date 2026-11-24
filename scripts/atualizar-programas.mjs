@@ -14,11 +14,11 @@ const HEADERS = { Accept: "application/json, text/csv, */*", "User-Agent": "Mozi
 const COLS = {
   n: ["NM_PROGRAMA_IES", "NM_PROGRAMA"], ie: ["NM_ENTIDADE_ENSINO"], sg: ["SG_ENTIDADE_ENSINO"],
   uf: ["SG_UF_PROGRAMA"], a: ["NM_AREA_AVALIACAO"], m: ["NM_MODALIDADE_PROGRAMA"],
-  nota: ["CD_CONCEITO_PROGRAMA"], id: ["CD_PROGRAMA_IES"], ano: ["AN_BASE"], sit: ["DS_SITUACAO_PROGRAMA"],
+  nota: ["CD_CONCEITO_PROGRAMA"], dep: ["DS_DEPENDENCIA_ADMINISTRATIVA", "CS_STATUS_JURIDICO"], mu: ["NM_MUNICIPIO_PROGRAMA_IES"], id: ["CD_PROGRAMA_IES"], ano: ["AN_BASE"], sit: ["DS_SITUACAO_PROGRAMA"],
 };
 const MINUSCULAS = new Set(["da", "de", "do", "das", "dos", "e", "em", "para", "a", "o", "no", "na"]);
 const title = (s) =>
-  s.toLocaleLowerCase("pt-BR").replace(/(^|[\s(/-])(\p{L}+)/gu, (_, a, w) => (a && MINUSCULAS.has(w) ? a + w : a + w[0].toLocaleUpperCase("pt-BR") + w.slice(1)));
+  s.toLocaleLowerCase("pt-BR").replace(/(^|[\s(/-])(\p{L}+)/gu, (_, a, w) => (a && MINUSCULAS.has(w) ? a + w : a + w[0].toLocaleUpperCase("pt-BR") + w.slice(1))).replace(/\b(Ii|Iii|Iv)\b/g, (m) => m.toUpperCase());
 const norm = (s) => String(s ?? "").normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 const anoMax = (s) => Math.max(0, ...(String(s ?? "").match(/20\d\d/g) || []).map(Number));
 
@@ -120,7 +120,11 @@ async function main() {
     const nota = g(r, "nota");
     if (!/^[3-7]$/.test(nota)) continue;
     if (col.sit && !norm(g(r, "sit")).includes("funcionamento")) continue;
-    out.push({ n: title(g(r, "n")), ie: g(r, "ie"), sg: g(r, "sg"), uf: g(r, "uf"), a: title(g(r, "a")), m: title(g(r, "m")), nota: Number(nota) });
+    const dep = norm(g(r, "dep"));
+    const item = { n: title(g(r, "n")), ie: g(r, "ie"), sg: g(r, "sg"), uf: g(r, "uf"), a: title(g(r, "a")), m: title(g(r, "m")), nota: Number(nota) };
+    if (dep) item.t = dep.includes("priv") ? "Privada" : "Pública";
+    if (g(r, "mu")) item.mu = title(g(r, "mu"));
+    out.push(item);
   }
   if (!out.length) throw new Error(`Nenhum programa com nota 3 a 7 em ${records.length} registros. Colunas: ${keys.join(", ")}`);
   out.sort((a, b) => b.nota - a.nota || a.n.localeCompare(b.n, "pt-BR"));
