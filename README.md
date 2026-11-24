@@ -119,3 +119,7 @@ A aba **Sobre e ajuda** (`src/Ajuda.tsx`) reúne FAQ, fontes dos dados, contato 
 ## Cuidado ao editar arquivos no Windows
 
 Editores como o Bloco de Notas podem gravar um marcador invisível (BOM) no começo do arquivo. Em `package.json` isso quebra o pnpm e a Vercel com o erro "Invalid package.json". Prefira editar pelo lápis do GitHub, ou salvar como "UTF-8" (sem BOM). O comando `pnpm verificar` (e o passo de verificação do CI) acusa o problema, e `node scripts/verificar-arquivos.mjs --corrigir` remove o BOM.
+
+## Nível e data dos programas CAPES
+
+O arquivo da CAPES traz o grau de cada programa (`NM_GRAU_PROGRAMA`). O script grava esse grau em `programas.json` e a data da base em `public/data/programas-meta.json` (ano-base, data da atualização e fonte). O site usa o grau para o filtro de nível e mostra a data na aba Programas CAPES e em Sobre e ajuda. O workflow e o build da Vercel gravam os dois arquivos.

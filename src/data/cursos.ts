@@ -48,6 +48,7 @@ export type Course = {
   mode: string;
   link?: string;
   capes?: boolean; // programa vindo dos dados abertos da CAPES
+  lvKnown?: boolean; // a CAPES informou se o programa é de mestrado e/ou doutorado
   nota?: string;
   sg?: string;
   ie?: string;

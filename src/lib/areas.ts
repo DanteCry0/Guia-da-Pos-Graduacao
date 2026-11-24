@@ -2,7 +2,8 @@
 export type Prog = {
   n: string; ie: string; sg: string; uf: string; a: string; m: string; nota: number;
   t?: string; mu?: string; // tipo (Pública/Privada) e município, quando o arquivo da CAPES traz
-  ga: string; sa: string; // grande área e subárea (área de avaliação), calculadas ao carregar
+  nv?: string; // grau informado pela CAPES (ex.: "Mestrado/Doutorado", "Mestrado Profissional")
+  ga: string; sa: string; lv: string; prof: boolean; // calculados ao carregar: grande área, subárea, níveis (M, D) e se é profissional
 };
 
 export const norm = (s: string) =>
@@ -63,3 +64,12 @@ export function notaFor(name: string, levels: string, sigla: string, progs: Prog
   const hi = Math.max(...notas);
   return lo === hi ? String(lo) : `${lo}–${hi}`;
 }
+
+/** Níveis (M = mestrado, D = doutorado) e se é profissional, a partir do grau informado pela CAPES. */
+export function levelsOf(nv = "", modalidade = "") {
+  const n = norm(nv);
+  return { lv: (n.includes("mestrado") ? "M" : "") + (n.includes("doutorado") ? "D" : ""), prof: n.includes("profission") || norm(modalidade).includes("profission") };
+}
+
+/** "MD" -> "Mestrado e Doutorado". */
+export const lvText = (lv: string) => (lv === "MD" ? "Mestrado e Doutorado" : lv === "M" ? "Mestrado" : lv === "D" ? "Doutorado" : "");

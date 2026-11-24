@@ -6,7 +6,7 @@ const rows: [string, (c: Course) => ReactNode][] = [
   ["Instituição", (c) => (c.capes && c.ie ? `${instOf(c)[0]} — ${c.ie}` : instOf(c)[0])],
   ["Estado", (c) => instOf(c)[1] || "—"],
   ["Tipo", (c) => instOf(c)[2] || "não informado"],
-  ["Nível", (c) => (c.capes ? "Mestrado / Doutorado (confira no site)" : c.levels.split("").map((l) => levelNames[l]).join(", "))],
+  ["Nível", (c) => (c.capes && !c.lvKnown ? "Mestrado / Doutorado (confira no site)" : c.levels.split("").map((l) => levelNames[l]).join(", "))],
   ["Área", (c) => c.area],
   ["Subárea", (c) => c.subarea],
   ["Modalidade", (c) => (c.capes ? "Presencial (confira no site)" : c.mode)],

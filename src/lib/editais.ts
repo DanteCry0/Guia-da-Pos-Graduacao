@@ -11,6 +11,7 @@ export type Call = {
   detail: string;
   url: string;
   fonte?: string;
+  verificado?: string; // data (AAAA-MM-DD) em que prazo e link foram conferidos
 };
 
 // Os editais ficam em src/data/editais.json (fácil de editar).
@@ -36,3 +37,13 @@ export function callState(c: Call, now: Date) {
   const days = Math.round((parseDay(c.end).getTime() - today.getTime()) / 864e5);
   return { status, days, soon: status === "ab" && days <= 7 };
 }
+
+/** Dias inteiros desde uma data (AAAA-MM-DD) até hoje. */
+export const daysSince = (iso: string, now: Date) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  const hoje = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((hoje.getTime() - new Date(y, m - 1, d).getTime()) / 864e5);
+};
+
+/** Encerrado há mais de 30 dias: sai da lista padrão (continua em "Situação: Encerrados"). */
+export const isStale = (c: Call, now: Date) => callState(c, now).status === "enc" && daysSince(c.end, now) > 30;

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { norm, usePrograms, type Prog } from "./programs";
+import { fmtDate } from "./lib/editais.ts";
+import { lvText, norm, useProgramMeta, usePrograms, type Prog } from "./programs";
 
 const PAGE = 60;
 
@@ -26,6 +27,8 @@ export default function Programas() {
   const [area, setArea] = useState("");
   const [uf, setUf] = useState("");
   const [mod, setMod] = useState("");
+  const [nivel, setNivel] = useState("");
+  const meta = useProgramMeta();
   const [shown, setShown] = useState(PAGE);
 
   const opts = (k: keyof Prog) => [...new Set((data ?? []).map((p) => String(p[k])))].filter(Boolean).sort();
@@ -38,10 +41,11 @@ export default function Programas() {
             (!nota || p.nota >= Number(nota)) &&
             (!area || p.sa === area) &&
             (!uf || p.uf === uf) &&
-            (!mod || p.m === mod),
+            (!mod || p.m === mod) &&
+            (!nivel || p.lv.includes(nivel === "Mestrado" ? "M" : "D")),
         )
         .sort((a, b) => b.nota - a.nota || a.n.localeCompare(b.n, "pt-BR")),
-    [data, q, nota, area, uf, mod],
+    [data, q, nota, area, uf, mod, nivel],
   );
 
   return (
@@ -63,6 +67,11 @@ export default function Programas() {
           .
         </p>
       </div>
+      {meta && (
+        <p className="call-count">
+          Base de dados da CAPES: {meta.anoBase}. Lista atualizada no PósGuia em {fmtDate(meta.geradoEm)}.
+        </p>
+      )}
       {data === null && <p className="call-count">Carregando programas…</p>}
       {data !== null && data.length === 0 && (
         <div className="empty-state">
@@ -87,6 +96,7 @@ export default function Programas() {
             <Field label="Nota mínima" value={nota} onChange={(v) => { setNota(v); setShown(PAGE); }} options={["3", "4", "5", "6", "7"]} />
             <Field label="Área de avaliação" value={area} onChange={(v) => { setArea(v); setShown(PAGE); }} options={opts("sa")} />
             <Field label="Estado" value={uf} onChange={(v) => { setUf(v); setShown(PAGE); }} options={opts("uf")} />
+            <Field label="Nível" value={nivel} onChange={(v) => { setNivel(v); setShown(PAGE); }} options={["Mestrado", "Doutorado"]} />
             <Field label="Modalidade" value={mod} onChange={(v) => { setMod(v); setShown(PAGE); }} options={opts("m")} />
           </div>
           <p className="call-count">
@@ -106,6 +116,7 @@ export default function Programas() {
                   </p>
                   <small>
                     {p.sa} · {p.m}
+                    {p.lv ? ` · ${lvText(p.lv)}` : ""}
                   </small>
                 </div>
               </article>

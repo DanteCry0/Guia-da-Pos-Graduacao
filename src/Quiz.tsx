@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { relatedProgs, usePrograms } from "./programs";
+import { lvText, relatedProgs, usePrograms } from "./programs";
 
 type C = { id: number; institution: string; name: string; levels: string; area: string; subarea: string; mode: string; link?: string };
 type Inst = Record<string, [string, string, string, string]>;
@@ -74,10 +74,12 @@ export default function Quiz({ courses, institutions, onSeeCourses, onSeeProgram
       .sort((a, b) => b.s - a.s)
       .slice(0, 6);
     const prof = (m: string) => norm(m).includes("profission");
+    const want = rec.lv.filter((l) => l === "M" || l === "D");
     const progList =
       progs && rec.lv.some((l) => l === "M" || l === "D")
         ? relatedProgs(progs, area, sub)
             .filter((p) => !uf || p.uf === uf)
+            .filter((p) => !p.lv || want.some((l) => p.lv.includes(l)))
             .map((p) => ({ p, s: p.nota + (goal === "Crescer no mercado" && prof(p.m) ? 1.5 : 0) + (goal === "Carreira acadêmica e pesquisa" && !prof(p.m) ? 1.5 : 0) }))
             .sort((a, b) => b.s - a.s || a.p.n.localeCompare(b.p.n, "pt-BR"))
             .slice(0, 8)
@@ -175,7 +177,7 @@ export default function Quiz({ courses, institutions, onSeeCourses, onSeeProgram
                     <div>
                       <h3>{p.n}</h3>
                       <p>{p.sg ? `${p.sg} · ` : ""}{p.ie} · {p.uf}</p>
-                      <small>{p.sa} · {p.m}</small>
+                      <small>{p.sa} · {p.m}{p.lv ? ` · ${lvText(p.lv)}` : ""}</small>
                     </div>
                   </article>
                 ))}

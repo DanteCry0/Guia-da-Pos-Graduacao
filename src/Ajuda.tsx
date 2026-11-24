@@ -2,6 +2,7 @@ import { useState } from "react";
 import Apoio from "./Apoio.tsx";
 import { CONTACT_EMAIL } from "./config.ts";
 import { calls, fmtDate } from "./lib/editais.ts";
+import { useProgramMeta } from "./programs.ts";
 import { contatoMailto } from "./lib/contato.ts";
 
 const FAQ: [string, string][] = [
@@ -21,6 +22,7 @@ const ir = (id: string) => document.getElementById(id)?.scrollIntoView({ behavio
 
 export default function Ajuda() {
   const [copied, setCopied] = useState(false);
+  const meta = useProgramMeta();
   const ultima = calls.map((c) => c.verificado).filter(Boolean).sort().pop();
   const pagina = `${window.location.origin}${window.location.pathname}?aba=ajuda`;
   const copiar = async () => {
@@ -63,7 +65,7 @@ export default function Ajuda() {
         <h2 id="fontes-t">Fontes dos dados</h2>
         <ul className="fontes">
           <li>
-            <strong>Programas de mestrado e doutorado e suas notas:</strong> Portal de Dados Abertos da CAPES, conjunto “Programas da Pós-Graduação Stricto Sensu do Brasil”. A lista é atualizada automaticamente toda segunda-feira. A plataforma oficial de consulta é o{" "}
+            <strong>Programas de mestrado e doutorado e suas notas:</strong> Portal de Dados Abertos da CAPES, conjunto “Programas da Pós-Graduação Stricto Sensu do Brasil”. A lista é atualizada automaticamente toda segunda-feira e a cada publicação do site{meta ? `. Base de dados da CAPES: ${meta.anoBase}; última atualização no PósGuia em ${fmtDate(meta.geradoEm)}` : ""}. A plataforma oficial de consulta é o{" "}
             <a href="https://sucupira.capes.gov.br/programas" target="_blank" rel="noreferrer">Sucupira</a>.
           </li>
           <li>

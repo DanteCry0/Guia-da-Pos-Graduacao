@@ -9,12 +9,14 @@ import { writeFileSync, existsSync } from "node:fs";
 const BASE = process.env.CAPES_BASE || "https://dadosabertos.capes.gov.br/api/3/action";
 const RESOURCE = process.env.CAPES_RESOURCE_ID || "7ba1e10d-d3af-4e42-bf0f-f7436af63c80";
 const OUT = "public/data/programas.json";
+const OUT_META = "public/data/programas-meta.json";
+let fonte = "";
 const LIMIT = 5000;
 const HEADERS = { Accept: "application/json, text/csv, */*", "User-Agent": "Mozilla/5.0 (compatible; PosGuia/1.0)" };
 const COLS = {
   n: ["NM_PROGRAMA_IES", "NM_PROGRAMA"], ie: ["NM_ENTIDADE_ENSINO"], sg: ["SG_ENTIDADE_ENSINO"],
   uf: ["SG_UF_PROGRAMA"], a: ["NM_AREA_AVALIACAO"], m: ["NM_MODALIDADE_PROGRAMA"],
-  nota: ["CD_CONCEITO_PROGRAMA"], dep: ["DS_DEPENDENCIA_ADMINISTRATIVA", "CS_STATUS_JURIDICO"], mu: ["NM_MUNICIPIO_PROGRAMA_IES"], id: ["CD_PROGRAMA_IES"], ano: ["AN_BASE"], sit: ["DS_SITUACAO_PROGRAMA"],
+  nota: ["CD_CONCEITO_PROGRAMA"], grau: ["NM_GRAU_PROGRAMA"], dep: ["DS_DEPENDENCIA_ADMINISTRATIVA", "CS_STATUS_JURIDICO"], mu: ["NM_MUNICIPIO_PROGRAMA_IES"], id: ["CD_PROGRAMA_IES"], ano: ["AN_BASE"], sit: ["DS_SITUACAO_PROGRAMA"],
 };
 const MINUSCULAS = new Set(["da", "de", "do", "das", "dos", "e", "em", "para", "a", "o", "no", "na"]);
 const title = (s) =>
@@ -82,7 +84,10 @@ async function descobrir() {
       console.log(`Tentando: ${p.title} :: ${r.name} (${r.id}) datastore_ativo=${r.datastore_active} ${r.url}`);
       try {
         const dados = r.datastore_active ? await viaDatastore(r.id) : await viaCsv(r.url);
-        if (dados.length) return dados;
+        if (dados.length) {
+          fonte = `${p.title} :: ${r.name}`;
+          return dados;
+        }
       } catch (e) {
         console.log("  falhou:", e.message);
       }
@@ -95,6 +100,7 @@ async function main() {
   let records;
   try {
     records = await viaDatastore(RESOURCE);
+    fonte = `recurso ${RESOURCE}`;
     console.log(`DataStore do recurso ${RESOURCE}: ${records.length} registros.`);
   } catch (e) {
     console.log(`Recurso ${RESOURCE} indisponível no DataStore (${e.message.slice(0, 120)}). Procurando o conjunto de dados...`);
@@ -125,11 +131,14 @@ async function main() {
     const item = { n: title(g(r, "n")), ie: g(r, "ie"), sg: g(r, "sg"), uf: g(r, "uf"), a: title(g(r, "a")), m: title(g(r, "m")), nota: Number(nota) };
     if (dep) item.t = dep.includes("priv") ? "Privada" : "Pública";
     if (g(r, "mu")) item.mu = title(g(r, "mu"));
+    if (g(r, "grau")) item.nv = title(g(r, "grau"));
     out.push(item);
   }
   if (!out.length) throw new Error(`Nenhum programa com nota 3 a 7 em ${records.length} registros. Colunas: ${keys.join(", ")}`);
   out.sort((a, b) => b.nota - a.nota || a.n.localeCompare(b.n, "pt-BR"));
   writeFileSync(OUT, JSON.stringify(out));
+  const anos = [...recentes.values()].map((r) => g(r, "ano")).filter(Boolean).sort();
+  writeFileSync(OUT_META, JSON.stringify({ geradoEm: new Date().toISOString().slice(0, 10), fonte, anoBase: anos[anos.length - 1] ?? "", total: out.length }));
   console.log(`${out.length} programas gravados em ${OUT} (de ${records.length} registros).`);
 }
 

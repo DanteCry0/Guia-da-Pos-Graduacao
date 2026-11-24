@@ -191,7 +191,7 @@ export default function App() {
     const extra = (progs ?? [])
       .filter((p) => !(catKeys.has(key(p.n, p.sg)) && counts.get(key(p.n, p.sg)) === 1))
       .map((p, i): Course => ({
-        id: 100000 + i, key: `p:${p.sg || p.ie}:${p.n}:${p.uf}`, institution: "", name: p.n, levels: "MD", area: p.ga, subarea: p.sa, mode: "Presencial",
+        id: 100000 + i, key: `p:${p.sg || p.ie}:${p.n}:${p.uf}`, institution: "", name: p.n, levels: p.lv || "MD", lvKnown: !!p.lv, area: p.ga, subarea: p.sa, mode: "Presencial",
         capes: true, nota: String(p.nota), sg: p.sg, ie: p.ie, uf: p.uf, tipo: p.t ?? "", prog: p.m,
         link: `https://www.google.com/search?q=${encodeURIComponent(`${p.n} ${p.sg || p.ie} pós-graduação`)}`,
       }));
@@ -512,8 +512,7 @@ export default function App() {
                 )}
                 {progs && progs.length > 0 && (
                   <p className="capes-note">
-                    A lista inclui os programas de mestrado e doutorado reconhecidos pela CAPES, com a nota. Os dados abertos não informam os
-                    níveis oferecidos nem a modalidade de cada programa: confira no site antes de se inscrever.
+                    A lista inclui os programas de mestrado e doutorado reconhecidos pela CAPES, com a nota. Os dados abertos não informam a modalidade (presencial ou EAD) de cada programa: confira no site antes de se inscrever.
                   </p>
                 )}
                 <div className="course-list">
@@ -548,7 +547,7 @@ export default function App() {
                           </div>
                           <h3>{course.name}</h3>
                           <div className="pills">
-                            {course.capes ? (
+                            {course.capes && !course.lvKnown ? (
                               <span className="level-pill">Mestrado / Doutorado</span>
                             ) : (
                               course.levels.split("").map((l) => (
