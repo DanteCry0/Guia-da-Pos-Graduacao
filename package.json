@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "format": "oxfmt",
     "atualizar-programas": "node scripts/atualizar-programas.mjs",
-    "prebuild": "node scripts/atualizar-programas.mjs || echo 'Mantendo public/data/programas.json atual'"
+    "prebuild": "node scripts/atualizar-programas.mjs || echo 'Mantendo public/data/programas.json atual'",
+    "test": "node --test \"tests/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "react": "^19.0.0",

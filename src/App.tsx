@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import Programas from "./Programas";
 import Quiz from "./Quiz";
-import editais from "./data/editais.json";
-import { canonSub, gaOf, norm as pnorm, notaFor, usePrograms } from "./programs";
+import Compare from "./Compare";
+import { norm as pnorm, notaFor, usePrograms } from "./programs";
+import { courses, duration, institutions, instOf, levelNames, type Course } from "./data/cursos.ts";
+import { callAreas, calls, callState, fmtDate, statusOrder } from "./lib/editais.ts";
 
 type IconName =
   | "search"
@@ -109,225 +111,9 @@ function Icon({
   );
 }
 
-const institutions: Record<string, [string, string, "Pública" | "Privada", string]> = {
-  usp: ["USP", "SP", "Pública", "https://www.prpg.usp.br/"],
-  unicamp: ["Unicamp", "SP", "Pública", "https://www.pg.unicamp.br/"],
-  ufscar: ["UFSCar", "SP", "Pública", "https://www.propg.ufscar.br/"],
-  ita: ["ITA", "SP", "Pública", "https://www.ita.br/"],
-  inpe: ["INPE", "SP", "Pública", "https://www.gov.br/inpe/pt-br"],
-  ufrj: ["UFRJ", "RJ", "Pública", "https://pr2.ufrj.br/"],
-  uff: ["UFF", "RJ", "Pública", "https://www.uff.br/"],
-  uerj: ["UERJ", "RJ", "Pública", "https://iesp.uerj.br/pos-graduacao/selecao/"],
-  ufmg: ["UFMG", "MG", "Pública", "https://www.ufmg.br/prpg/"],
-  ufu: ["UFU", "MG", "Pública", "https://www.ufu.br/"],
-  ufrgs: ["UFRGS", "RS", "Pública", "https://www.ufrgs.br/propg/"],
-  unipampa: ["Unipampa", "RS", "Pública", "https://unipampa.edu.br/"],
-  ufsc: ["UFSC", "SC", "Pública", "https://propg.ufsc.br/"],
-  unb: ["UnB", "DF", "Pública", "https://dpg.unb.br/"],
-  ufpe: ["UFPE", "PE", "Pública", "https://www.ufpe.br/propg"],
-  ufba: ["UFBA", "BA", "Pública", "https://propg.ufba.br/"],
-  fgv: ["FGV", "SP", "Privada", "https://portal.fgv.br/"],
-  insper: ["Insper", "SP", "Privada", "https://www.insper.edu.br/"],
-  fia: ["FIA Business School", "SP", "Privada", "https://fia.com.br/"],
-  pucrio: ["PUC-Rio", "RJ", "Privada", "https://www.puc-rio.br/"],
-  pucrs: ["PUCRS", "RS", "Privada", "https://portal.pucrs.br/"],
-};
-
-const levelNames: Record<string, string> = {
-  M: "Mestrado",
-  D: "Doutorado",
-  E: "Especialização",
-  B: "MBA",
-};
-const duration: Record<string, string> = {
-  M: "até 24 meses",
-  D: "até 48 meses",
-  E: "mín. 360 horas",
-  B: "mín. 360 horas",
-};
-
-type Course = {
-  id: number;
-  institution: string;
-  name: string;
-  levels: string;
-  area: string;
-  subarea: string;
-  mode: string;
-  link?: string;
-  capes?: boolean; // programa vindo dos dados abertos da CAPES
-  nota?: string;
-  sg?: string;
-  ie?: string;
-  uf?: string;
-  tipo?: string;
-  prog?: string;
-};
-
-const courseRows: Array<[string, string, string, string, string, string?, string?]> = [
-  ["usp", "Direito (Faculdade de Direito)", "MD", "Ciências Sociais Aplicadas", "Direito"],
-  ["unb", "Direito", "MD", "Ciências Sociais Aplicadas", "Direito"],
-  ["ufsc", "Direito", "MD", "Ciências Sociais Aplicadas", "Direito"],
-  ["ufrj", "Direito", "MD", "Ciências Sociais Aplicadas", "Direito"],
-  ["uff", "Direito", "MD", "Ciências Sociais Aplicadas", "Direito"],
-  ["pucrio", "Direito", "MD", "Ciências Sociais Aplicadas", "Direito"],
-  [
-    "fgv",
-    "Direito e Desenvolvimento (FGV Direito SP)",
-    "M",
-    "Ciências Sociais Aplicadas",
-    "Direito",
-  ],
-  [
-    "usp",
-    "Ciências de Computação e Matemática Computacional (ICMC)",
-    "MD",
-    "Ciências Exatas",
-    "Computação",
-  ],
-  [
-    "unicamp",
-    "Ciência da Computação (Instituto de Computação)",
-    "MD",
-    "Ciências Exatas",
-    "Computação",
-  ],
-  ["ufmg", "Ciência da Computação", "MD", "Ciências Exatas", "Computação"],
-  ["ufpe", "Ciência da Computação (CIn)", "MD", "Ciências Exatas", "Computação"],
-  ["ufrgs", "Computação", "MD", "Ciências Exatas", "Computação"],
-  ["ufrj", "Engenharia de Sistemas e Computação (COPPE)", "MD", "Ciências Exatas", "Computação"],
-  ["unipampa", "Computação Aplicada (Bagé)", "M", "Ciências Exatas", "Computação"],
-  ["inpe", "Meteorologia", "MD", "Ciências Exatas", "Meteorologia"],
-  ["ufrgs", "Ensino de Matemática", "MD", "Ciências Humanas", "Educação"],
-  ["usp", "Educação (Faculdade de Educação)", "MD", "Ciências Humanas", "Educação"],
-  ["unicamp", "Educação (Faculdade de Educação)", "MD", "Ciências Humanas", "Educação"],
-  ["ufba", "Educação", "MD", "Ciências Humanas", "Educação"],
-  [
-    "ufmg",
-    "Educação: Conhecimento e Inclusão Social",
-    "MD",
-    "Ciências Humanas",
-    "Educação",
-    "Presencial",
-    "https://www.posgrad.fae.ufmg.br/",
-  ],
-  [
-    "ufmg",
-    "Mestrado Profissional em Educação e Docência",
-    "M",
-    "Ciências Humanas",
-    "Educação",
-    "Presencial",
-    "https://selecao.promestre.fae.ufmg.br/",
-  ],
-  ["ufsc", "Antropologia Social", "M", "Ciências Humanas", "Ciências Sociais"],
-  ["uerj", "Ciência Política e Sociologia (IESP)", "D", "Ciências Humanas", "Ciências Sociais"],
-  [
-    "unicamp",
-    "Divulgação Científica e Cultural (Labjor)",
-    "MD",
-    "Ciências Humanas",
-    "Comunicação",
-    "Presencial",
-    "https://www.labjor.unicamp.br/",
-  ],
-  ["pucrs", "Comunicação Social", "MD", "Ciências Sociais Aplicadas", "Comunicação"],
-  ["uff", "Ciência da Informação", "MD", "Ciências Sociais Aplicadas", "Ciência da Informação"],
-  ["ufu", "Relações Internacionais", "MD", "Ciências Sociais Aplicadas", "Relações Internacionais"],
-  ["ufu", "Estudos Linguísticos", "MD", "Linguística, Letras e Artes", "Linguística"],
-  ["ufscar", "Terapia Ocupacional", "MD", "Saúde", "Terapia Ocupacional"],
-  ["ita", "Engenharia Aeronáutica e Mecânica", "MD", "Engenharias", "Engenharia Aeroespacial"],
-  ["unipampa", "Engenharia Elétrica (Alegrete)", "M", "Engenharias", "Engenharia Elétrica"],
-  ["unipampa", "Engenharia (Alegrete)", "MD", "Engenharias", "Engenharia"],
-  [
-    "usp",
-    "MBA USP/Esalq",
-    "B",
-    "Ciências Sociais Aplicadas",
-    "Administração",
-    "EAD",
-    "https://mbauspesalq.com/",
-  ],
-  [
-    "fgv",
-    "MBAs e especializações FGV",
-    "EB",
-    "Ciências Sociais Aplicadas",
-    "Administração",
-    "Presencial / EAD",
-  ],
-  [
-    "insper",
-    "MBAs e especializações Insper",
-    "EB",
-    "Ciências Sociais Aplicadas",
-    "Administração",
-    "Presencial / EAD",
-  ],
-  [
-    "fia",
-    "MBAs e especializações FIA",
-    "EB",
-    "Ciências Sociais Aplicadas",
-    "Administração",
-    "Presencial / EAD",
-  ],
-];
-
-const SUB_FIX: Record<string, string> = {
-  "Antropologia Social": "Antropologia / Arqueologia",
-  "Ciência Política e Sociologia (IESP)": "Sociologia",
-  "Ensino de Matemática": "Ensino",
-};
-const courses: Course[] = courseRows.map((c, id) => {
-  const subarea = SUB_FIX[c[1]] ?? canonSub(c[4]);
-  return { id, institution: c[0], name: c[1], levels: c[2], area: gaOf(subarea) ?? c[3], subarea, mode: c[5] || "Presencial", link: c[6] };
-});
-const instOf = (c: Course): [string, string, string, string] =>
-  c.capes ? [c.sg || c.ie || "", c.uf || "", c.tipo || "", c.link || ""] : institutions[c.institution];
-
-type Call = {
-  name: string;
-  org: string;
-  level: string;
-  area: string;
-  start?: string;
-  end: string;
-  detail: string;
-  url: string;
-  fonte?: string;
-};
-
-// Os editais ficam em src/data/editais.json (fácil de editar).
-const calls = editais as unknown as Call[];
-
-const areas = [...new Set(courses.map((c) => c.area))].sort();
-const states = [...new Set(Object.values(institutions).map((i) => i[1]))].sort();
-const callAreas = [...new Set(calls.map((c) => c.area))].sort();
-
-const norm = (s: string) =>
-  s
-    .toLocaleLowerCase("pt-BR")
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "");
-const months = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
-const fmtDate = (iso: string) => {
-  const [y, m, d] = iso.split("-");
-  return `${d} ${months[Number(m) - 1]} ${y}`;
-};
-const parseDay = (iso: string, endOfDay = false) => {
-  const [y, m, d] = iso.split("-").map(Number);
-  return endOfDay ? new Date(y, m - 1, d, 23, 59, 59) : new Date(y, m - 1, d);
-};
-type CallStatus = "ab" | "prog" | "enc";
-const statusOrder: Record<CallStatus, number> = { ab: 0, prog: 1, enc: 2 };
-function callState(c: Call, now: Date) {
-  const end = parseDay(c.end, true);
-  const status: CallStatus = c.start && now < parseDay(c.start) ? "prog" : now > end ? "enc" : "ab";
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const days = Math.round((parseDay(c.end).getTime() - today.getTime()) / 864e5);
-  return { status, days, soon: status === "ab" && days <= 7 };
-}
+const qs = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+const TABS = ["cursos", "editais", "guia", "programas", "quiz"] as const;
+type Tab = (typeof TABS)[number];
 
 function Select({
   label,
@@ -357,19 +143,35 @@ function Select({
 }
 
 export default function App() {
-  const [tab, setTab] = useState<"cursos" | "editais" | "guia" | "programas" | "quiz">("cursos");
-  const [query, setQuery] = useState("");
-  const [level, setLevel] = useState("");
-  const [area, setArea] = useState("");
-  const [state, setState] = useState("");
-  const [mode, setMode] = useState("");
-  const [type, setType] = useState("");
-  const [sub, setSub] = useState("");
+  const [tab, setTab] = useState<Tab>(TABS.find((t) => t === qs.get("aba")) ?? "cursos");
+  const [query, setQuery] = useState(qs.get("q") ?? "");
+  const [level, setLevel] = useState(qs.get("nivel") ?? "");
+  const [area, setArea] = useState(qs.get("area") ?? "");
+  const [state, setState] = useState(qs.get("uf") ?? "");
+  const [mode, setMode] = useState(qs.get("modo") ?? "");
+  const [type, setType] = useState(qs.get("tipo") ?? "");
+  const [sub, setSub] = useState(qs.get("sub") ?? "");
   const [callStatus, setCallStatus] = useState("");
   const [callArea, setCallArea] = useState("");
   const [callQuery, setCallQuery] = useState("");
-  const [sort, setSort] = useState("Relevância");
-  const [saved, setSaved] = useState<number[]>([]);
+  const [sort, setSort] = useState(qs.get("ordem") ?? "Relevância");
+  const [saved, setSaved] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("posguia:salvos") || "[]");
+    } catch {
+      return [];
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("posguia:salvos", JSON.stringify(saved));
+    } catch {
+      /* armazenamento indisponível: segue sem salvar */
+    }
+  }, [saved]);
+  const [cmp, setCmp] = useState<string[]>([]);
+  const [showCmp, setShowCmp] = useState(false);
+  const [copied, setCopied] = useState(false);
   const progs = usePrograms();
   const [shown, setShown] = useState(30);
   // Catálogo manual (com links e lato sensu) + programas reais da CAPES.
@@ -382,7 +184,7 @@ export default function App() {
     const extra = (progs ?? [])
       .filter((p) => !(catKeys.has(key(p.n, p.sg)) && counts.get(key(p.n, p.sg)) === 1))
       .map((p, i): Course => ({
-        id: 100000 + i, institution: "", name: p.n, levels: "MD", area: p.ga, subarea: p.sa, mode: "Presencial",
+        id: 100000 + i, key: `p:${p.sg || p.ie}:${p.n}:${p.uf}`, institution: "", name: p.n, levels: "MD", area: p.ga, subarea: p.sa, mode: "Presencial",
         capes: true, nota: String(p.nota), sg: p.sg, ie: p.ie, uf: p.uf, tipo: p.t ?? "", prog: p.m,
         link: `https://www.google.com/search?q=${encodeURIComponent(`${p.n} ${p.sg || p.ie} pós-graduação`)}`,
       }));
@@ -390,7 +192,7 @@ export default function App() {
   }, [progs]);
   const areas = useMemo(() => [...new Set(allCourses.map((c) => c.area))].sort(), [allCourses]);
   const states = useMemo(() => [...new Set(allCourses.map((c) => instOf(c)[1]))].filter(Boolean).sort(), [allCourses]);
-  const [onlySaved, setOnlySaved] = useState(false);
+  const [onlySaved, setOnlySaved] = useState(qs.get("salvos") === "1");
   const [mobileFilters, setMobileFilters] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -408,7 +210,7 @@ export default function App() {
           (!state || inst[1] === state) &&
           (!mode || c.mode.includes(mode)) &&
           (!type || inst[2] === type) &&
-          (!onlySaved || saved.includes(c.id))
+          (!onlySaved || saved.includes(c.key))
         );
       })
       .sort((a, b) =>
@@ -422,6 +224,28 @@ export default function App() {
   useEffect(() => {
     setShown(30);
   }, [query, level, area, sub, state, mode, type, onlySaved, sort]);
+  // Mantém a aba e os filtros na URL, para a busca poder ser compartilhada.
+  useEffect(() => {
+    const p = new URLSearchParams();
+    if (tab !== "cursos") p.set("aba", tab);
+    else
+      Object.entries({ q: query, nivel: level, area, sub, uf: state, modo: mode, tipo: type, ordem: sort === "Relevância" ? "" : sort, salvos: onlySaved ? "1" : "" }).forEach(
+        ([k, v]) => v && p.set(k, v),
+      );
+    const s = p.toString();
+    window.history.replaceState(null, "", window.location.pathname + (s ? `?${s}` : "") + window.location.hash);
+  }, [tab, query, level, area, sub, state, mode, type, sort, onlySaved]);
+  const cmpItems = cmp.map((k) => allCourses.find((c) => c.key === k)).filter(Boolean) as Course[];
+  const toggleCmp = (k: string) => setCmp((c) => (c.includes(k) ? c.filter((x) => x !== k) : c.length < 3 ? [...c, k] : c));
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+    } catch {
+      window.prompt("Copie o link:", window.location.href);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const subareas = useMemo(
     () => [...new Set(allCourses.filter((c) => !area || c.area === area).map((c) => c.subarea))].sort(),
@@ -450,7 +274,7 @@ export default function App() {
       (c) =>
         (!callStatus || c.status === callStatus) &&
         (!callArea || c.area === callArea) &&
-        (!callQuery || norm(`${c.name} ${c.org}`).includes(norm(callQuery))),
+        (!callQuery || pnorm(`${c.name} ${c.org}`).includes(pnorm(callQuery))),
     )
     .sort(
       (a, b) =>
@@ -502,6 +326,18 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      <a
+        className="skip-link"
+        href="#conteudo"
+        onClick={(e) => {
+          e.preventDefault();
+          const m = document.querySelector("main") as HTMLElement | null;
+          m?.setAttribute("tabindex", "-1");
+          m?.focus();
+        }}
+      >
+        Pular para o conteúdo
+      </a>
       <header className="site-header">
         <div className="nav-inner">
           <button className="brand" onClick={() => goToCourses()} aria-label="Ir para o início">
@@ -525,6 +361,7 @@ export default function App() {
               <button
                 key={id}
                 className={tab === id ? "active" : ""}
+                aria-current={tab === id ? "page" : undefined}
                 onClick={() => {
                   setTab(id);
                   setMenuOpen(false);
@@ -545,6 +382,7 @@ export default function App() {
           </button>
           <button
             className="menu-button"
+            aria-expanded={menuOpen}
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
           >
@@ -630,11 +468,14 @@ export default function App() {
               </aside>
               <section className="results-area">
                 <div className="results-bar">
-                  <p>
+                  <p aria-live="polite">
                     <strong>{filtered.length}</strong>{" "}
                     {filtered.length === 1 ? "curso encontrado" : "cursos encontrados"}
                     {onlySaved && " nos seus salvos"}
                   </p>
+                  <button className="copy-link" onClick={copyLink}>
+                    {copied ? "Link copiado!" : "Copiar link da busca"}
+                  </button>
                   <label>
                     Ordenar por{" "}
                     <select value={sort} onChange={(e) => setSort(e.target.value)}>
@@ -660,7 +501,7 @@ export default function App() {
                 <div className="course-list">
                   {filtered.slice(0, shown).map((course) => {
                     const inst = instOf(course);
-                    const isSaved = saved.includes(course.id);
+                    const isSaved = saved.includes(course.key);
                     const nota = course.nota;
                     return (
                       <article className="course-card" key={course.id}>
@@ -678,8 +519,8 @@ export default function App() {
                               onClick={() =>
                                 setSaved(
                                   isSaved
-                                    ? saved.filter((x) => x !== course.id)
-                                    : [...saved, course.id],
+                                    ? saved.filter((x) => x !== course.key)
+                                    : [...saved, course.key],
                                 )
                               }
                               aria-label={isSaved ? "Remover dos salvos" : "Salvar curso"}
@@ -718,6 +559,15 @@ export default function App() {
                                 .join(" / ")}
                             </span>
                           </div>
+                          <label className="cmp-check">
+                            <input
+                              type="checkbox"
+                              checked={cmp.includes(course.key)}
+                              disabled={!cmp.includes(course.key) && cmp.length >= 3}
+                              onChange={() => toggleCmp(course.key)}
+                            />{" "}
+                            Comparar
+                          </label>
                         </div>
                         <a
                           className="details-button"
@@ -750,6 +600,31 @@ export default function App() {
             </div>
           </main>
         </>
+      )}
+
+      {tab === "cursos" && cmp.length > 0 && (
+        <div className="cmp-bar" role="region" aria-label="Comparação de cursos">
+          <span>
+            {cmp.length} {cmp.length === 1 ? "curso selecionado" : "cursos selecionados"} (máx. 3)
+          </span>
+          <button className="more-btn" disabled={cmp.length < 2} onClick={() => setShowCmp(true)}>
+            Comparar
+          </button>
+          <button className="link-btn" onClick={() => setCmp([])}>
+            Limpar
+          </button>
+        </div>
+      )}
+      {showCmp && cmpItems.length > 1 && (
+        <Compare
+          items={cmpItems}
+          onClose={() => setShowCmp(false)}
+          onRemove={(k) => {
+            const next = cmp.filter((x) => x !== k);
+            setCmp(next);
+            if (next.length < 2) setShowCmp(false);
+          }}
+        />
       )}
 
       {tab === "programas" && <Programas />}

@@ -25,8 +25,8 @@ Requer Node 22.12 ou mais novo.
 
 | O que | Onde |
 | --- | --- |
-| Cursos e instituições | `src/App.tsx` (`institutions` e `courseRows`) |
-| Editais (nome, datas, link) | `src/App.tsx` (`calls`). O status é calculado pela data de hoje |
+| Cursos e instituições | `src/data/cursos.ts` (`institutions` e `courseRows`) |
+| Editais (nome, datas, link) | `src/data/editais.json`. O status é calculado por `src/lib/editais.ts` |
 | Quiz | `src/Quiz.tsx` |
 | Programas CAPES com nota | `src/Programas.tsx` e `public/data/programas.json` |
 | Título, descrição e idioma do site | `.figma/make/site.json` |
@@ -49,3 +49,52 @@ O comando grava `public/data/programas.json`. Ele também roda sozinho antes de 
 - O `.gitattributes` da raiz manda imagens para o Git LFS. O de `public/` exclui o `favicon.png` dessa regra, então mantenha os dois. Se for adicionar outras imagens, use arquivos pequenos fora do LFS ou ative o LFS na Vercel.
 - Os prazos e links dos editais devem ser conferidos nos editais oficiais.
 - A pasta `.figma/` e os arquivos `AGENTS.md` e `CLAUDE.md` vêm do Figma Make. Pode mantê-los.
+
+## Atualização automática dos programas
+
+O workflow `.github/workflows/atualizar-programas.yml` roda toda segunda-feira e também sob demanda (aba **Actions → Atualizar programas CAPES → Run workflow**). Ele baixa os dados da CAPES, salva `public/data/programas.json` e a Vercel publica de novo. Em caso de erro, o log do workflow mostra o motivo.
+
+## Como adicionar ou editar um edital
+
+Abra `src/data/editais.json` no GitHub (lápis) e copie um bloco `{ ... }` existente. Campos:
+
+| Campo | Exemplo | Observação |
+| --- | --- | --- |
+| `name` | `"Engenharia Elétrica"` | nome do programa |
+| `org` | `"UFMA"` | instituição |
+| `level` | `"Mestrado e Doutorado"` | texto livre |
+| `area` | `"Engenharias"` | usa-se no filtro de área |
+| `start` | `"2026-11-03"` | abertura (AAAA-MM-DD); opcional, se não souber |
+| `end` | `"2026-12-04"` | último dia de inscrição (AAAA-MM-DD) |
+| `detail` | `"45 vagas..."` | resumo curto |
+| `url` | `"https://..."` | link do edital |
+| `fonte` | `"UFMA (oficial)"` | de onde veio a informação |
+
+O status (aberto, programado, encerrado) e o aviso de "vence em N dias" são calculados sozinhos. Mantenha as vírgulas entre os blocos e confira as datas no edital oficial.
+
+## Estrutura do código
+
+| Pasta ou arquivo | Função |
+| --- | --- |
+| `src/App.tsx` | telas e navegação |
+| `src/Quiz.tsx`, `src/Programas.tsx`, `src/Compare.tsx` | quiz, programas CAPES e comparação de cursos |
+| `src/data/` | dados editáveis: `cursos.ts` e `editais.json` |
+| `src/lib/` | regras sem React (áreas, notas, status de editais), cobertas por testes |
+| `tests/` | testes automáticos |
+
+## Testes e verificação
+
+```bash
+pnpm test        # roda os testes (Node 22.18 ou mais novo)
+pnpm typecheck   # confere os tipos
+```
+
+O workflow `.github/workflows/ci.yml` roda tipos, testes e build a cada push. Os testes também validam os dados: um edital com data inexistente, link sem `https://` ou duplicado faz o teste falhar e avisa qual linha corrigir.
+
+## Links compartilháveis
+
+A aba e os filtros de Explorar cursos ficam na URL (`?aba=cursos&area=...&sub=...&uf=SP&nivel=M&modo=EAD&tipo=Pública&ordem=...&salvos=1&q=...`). O botão **Copiar link da busca** copia o endereço atual. No Quiz, **Copiar link do resultado** gera um link que reabre o resultado.
+
+## Favoritos e comparação
+
+Os cursos salvos ficam no navegador de quem usa (`localStorage`, chave `posguia:salvos`). A comparação aceita até 3 cursos e não é salva.

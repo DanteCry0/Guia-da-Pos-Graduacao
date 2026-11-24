@@ -24,15 +24,31 @@ function recommend(goal: string, now: string, avail: string) {
 }
 
 export default function Quiz({ courses, institutions, onSeeCourses, onSeeProgramas }: { courses: C[]; institutions: Inst; onSeeCourses: (area: string, sub: string) => void; onSeeProgramas: () => void }) {
-  const [goal, setGoal] = useState("");
-  const [now, setNow] = useState("");
-  const [avail, setAvail] = useState("");
-  const [area, setArea] = useState("");
-  const [sub, setSub] = useState("");
-  const [topic, setTopic] = useState("");
-  const [done, setDone] = useState(false);
-  const [uf, setUf] = useState("");
+  const qs = new URLSearchParams(window.location.search);
+  const [goal, setGoal] = useState(qs.get("g") ?? "");
+  const [now, setNow] = useState(qs.get("n") ?? "");
+  const [avail, setAvail] = useState(qs.get("d") ?? "");
+  const [area, setArea] = useState(qs.get("a") ?? "");
+  const [sub, setSub] = useState(qs.get("s") ?? "");
+  const [topic, setTopic] = useState(qs.get("t") ?? "");
+  const [done, setDone] = useState(qs.get("r") === "1");
+  const [uf, setUf] = useState(qs.get("uf") ?? "");
   const progs = usePrograms();
+  const [copied, setCopied] = useState(false);
+  const share = async () => {
+    const p = new URLSearchParams({ aba: "quiz", r: "1", g: goal, n: now, d: avail, a: area });
+    if (sub) p.set("s", sub);
+    if (topic) p.set("t", topic);
+    if (uf) p.set("uf", uf);
+    const url = `${window.location.origin}${window.location.pathname}?${p}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      window.prompt("Copie o link:", url);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
   const ufs = [...new Set((progs ?? []).map((p) => p.uf))].filter(Boolean).sort();
 
   const areas = [...new Set([...courses.map((c) => c.area), ...(progs ?? []).map((p) => p.ga)])].sort();
@@ -75,7 +91,7 @@ export default function Quiz({ courses, institutions, onSeeCourses, onSeeProgram
       <legend>{title}</legend>
       <div className="quiz-opts">
         {options.map((o) => (
-          <button type="button" key={o} className={value === o ? "quiz-opt on" : "quiz-opt"} onClick={() => { set(o); setDone(false); }}>
+          <button type="button" key={o} className={value === o ? "quiz-opt on" : "quiz-opt"} aria-pressed={value === o} onClick={() => { set(o); setDone(false); }}>
             {o}
           </button>
         ))}
@@ -120,7 +136,7 @@ export default function Quiz({ courses, institutions, onSeeCourses, onSeeProgram
         </button>
       </div>
       {res && (
-        <section className="quiz-result">
+        <section className="quiz-result" aria-live="polite">
           <h2>Indicado para você: {res.rec.lv.map((l) => LV[l]).join(" ou ")}</h2>
           <p>{res.rec.why}</p>
           <h3>Cursos e instituições para começar</h3>
@@ -169,6 +185,12 @@ export default function Quiz({ courses, institutions, onSeeCourses, onSeeProgram
           <div className="quiz-actions">
             <button className="more-btn" onClick={onSeeProgramas}>
               Ver todos os programas CAPES
+            </button>
+            <button className="more-btn" onClick={share}>
+              {copied ? "Link copiado!" : "Copiar link do resultado"}
+            </button>
+            <button className="more-btn" onClick={() => window.print()}>
+              Imprimir ou salvar em PDF
             </button>
             <button className="more-btn" onClick={() => onSeeCourses(area, sub)}>
               Ver todos os cursos dessa área
