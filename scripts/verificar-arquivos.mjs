@@ -7,9 +7,31 @@ import { readdirSync, readFileSync, statSync, writeFileSync, existsSync } from "
 import { join, extname } from "node:path";
 
 const corrigir = process.argv.includes("--corrigir");
-const RAIZ = ["package.json", "tsconfig.json", "vite.config.ts", "index.html", ".mise.toml", ".gitignore", ".gitattributes", "pnpm-lock.yaml"];
+const RAIZ = [
+  "package.json",
+  "tsconfig.json",
+  "vite.config.ts",
+  "index.html",
+  ".mise.toml",
+  ".gitignore",
+  ".gitattributes",
+  "pnpm-lock.yaml",
+];
 const PASTAS = ["src", "tests", "scripts", "public/data", ".github", ".figma"];
-const EXT = new Set([".json", ".ts", ".tsx", ".mjs", ".css", ".html", ".yml", ".yaml", ".md", ".toml", ".py", ".txt"]);
+const EXT = new Set([
+  ".json",
+  ".ts",
+  ".tsx",
+  ".mjs",
+  ".css",
+  ".html",
+  ".yml",
+  ".yaml",
+  ".md",
+  ".toml",
+  ".py",
+  ".txt",
+]);
 
 function listar(dir, out = []) {
   if (!existsSync(dir)) return out;
@@ -44,7 +66,9 @@ for (const arq of arquivos) {
 
 if (problemas.length) {
   console.error("Problemas encontrados:\n - " + problemas.join("\n - "));
-  console.error("\nComo resolver: abra o arquivo no editor do GitHub (lápis) e cole o conteúdo de novo, ou rode: node scripts/verificar-arquivos.mjs --corrigir");
+  console.error(
+    "\nComo resolver: abra o arquivo no editor do GitHub (lápis) e cole o conteúdo de novo, ou rode: node scripts/verificar-arquivos.mjs --corrigir",
+  );
   process.exit(1);
 }
 console.log(`Arquivos OK (${arquivos.length} conferidos, sem BOM e com JSON válido).`);

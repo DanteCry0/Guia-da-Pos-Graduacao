@@ -22,7 +22,8 @@ function campos(texto: string) {
 
 test("crc16: vetor padrão CCITT-FALSE", () => assert.equal(crc16("123456789"), "29B1"));
 test("crc16: exemplo do manual do BR Code do Banco Central", () => {
-  const manual = "00020126580014br.gov.bcb.pix0136123e4567-e12b-12d1-a456-4266554400005204000053039865802BR5913Fulano de Tal6008BRASILIA62070503***6304";
+  const manual =
+    "00020126580014br.gov.bcb.pix0136123e4567-e12b-12d1-a456-4266554400005204000053039865802BR5913Fulano de Tal6008BRASILIA62070503***6304";
   assert.equal(crc16(manual), "1D3D");
 });
 
@@ -32,7 +33,8 @@ test("parseAmount aceita vírgula, ponto e R$, e recusa valores inválidos", () 
   assert.equal(parseAmount("R$ 1.250,00"), "1250.00");
   assert.equal(parseAmount("0,01"), "0.01");
   assert.equal(parseAmount(""), "");
-  for (const ruim of ["0", "abc", "-5", "1,234", "10,5,5"]) assert.equal(parseAmount(ruim), null, ruim);
+  for (const ruim of ["0", "abc", "-5", "1,234", "10,5,5"])
+    assert.equal(parseAmount(ruim), null, ruim);
 });
 test("ascii tira acentos e limita o tamanho", () => {
   assert.equal(ascii("Apoio ao PósGuia ☺", 50), "Apoio ao PosGuia");
@@ -40,7 +42,13 @@ test("ascii tira acentos e limita o tamanho", () => {
 });
 
 test("payload do site: campos, CRC e valores corretos", () => {
-  const p = buildPixPayload({ key: PIX_KEY, name: PIX_NAME, city: PIX_CITY, amount: "10.00", message: "Apoio ao PósGuia" });
+  const p = buildPixPayload({
+    key: PIX_KEY,
+    name: PIX_NAME,
+    city: PIX_CITY,
+    amount: "10.00",
+    message: "Apoio ao PósGuia",
+  });
   assert.equal(crc16(p.slice(0, -4)), p.slice(-4));
   const c = campos(p.slice(0, -8)); // tudo antes do campo 63 (CRC)
   assert.equal(c["00"], "01");
@@ -59,13 +67,26 @@ test("payload do site: campos, CRC e valores corretos", () => {
 test("payload sem valor não tem o campo 54; mensagem longa é cortada para caber", () => {
   const sem = buildPixPayload({ key: PIX_KEY, name: PIX_NAME, city: PIX_CITY });
   assert.equal(campos(sem.slice(0, -8))["54"], undefined);
-  const longa = buildPixPayload({ key: PIX_KEY, name: PIX_NAME, city: PIX_CITY, message: "x".repeat(200) });
+  const longa = buildPixPayload({
+    key: PIX_KEY,
+    name: PIX_NAME,
+    city: PIX_CITY,
+    message: "x".repeat(200),
+  });
   const conta = campos(campos(longa.slice(0, -8))["26"]);
   assert.equal(conta["02"].length, maxMessage(PIX_KEY));
   assert.ok(campos(longa.slice(0, -8))["26"].length <= 99);
 });
 test("QR Code: gera matriz quadrada e caminho SVG", () => {
-  const { size, d } = qrPath(buildPixPayload({ key: PIX_KEY, name: PIX_NAME, city: PIX_CITY, amount: "10.00", message: "Apoio" }));
+  const { size, d } = qrPath(
+    buildPixPayload({
+      key: PIX_KEY,
+      name: PIX_NAME,
+      city: PIX_CITY,
+      amount: "10.00",
+      message: "Apoio",
+    }),
+  );
   assert.ok(size >= 41 && size <= 73 && (size - 21) % 4 === 0, `tamanho estranho: ${size}`);
   assert.match(d, /^M\d+ \d+h\d+v1h-\d+z/);
 });

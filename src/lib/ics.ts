@@ -2,15 +2,24 @@
 import { norm } from "./areas.ts";
 import type { Call } from "./editais.ts";
 
-const esc = (s: string) => s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+const esc = (s: string) =>
+  s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
 const ymd = (iso: string) => iso.replace(/-/g, "");
 const nextDay = (iso: string) => {
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10).replace(/-/g, "");
 };
-const stamp = (now: Date) => now.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+const stamp = (now: Date) =>
+  now
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}/, "");
 const titulo = (c: Call) => `Último dia de inscrição: ${c.org} · ${c.name}`;
-const slug = (c: Call) => norm(`${c.org} ${c.name}`).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50);
+const slug = (c: Call) =>
+  norm(`${c.org} ${c.name}`)
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 50);
 
 /** Quebra a linha em até 75 bytes, como manda o formato iCalendar. */
 function fold(line: string) {
@@ -33,14 +42,25 @@ function fold(line: string) {
 
 export function buildIcs(c: Call, now = new Date()) {
   const lines = [
-    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//PosGuia//Editais//PT-BR", "CALSCALE:GREGORIAN", "BEGIN:VEVENT",
-    `UID:${ymd(c.end)}-${slug(c)}@posguia`, `DTSTAMP:${stamp(now)}`,
-    `DTSTART;VALUE=DATE:${ymd(c.end)}`, `DTEND;VALUE=DATE:${nextDay(c.end)}`,
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//PosGuia//Editais//PT-BR",
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    `UID:${ymd(c.end)}-${slug(c)}@posguia`,
+    `DTSTAMP:${stamp(now)}`,
+    `DTSTART;VALUE=DATE:${ymd(c.end)}`,
+    `DTEND;VALUE=DATE:${nextDay(c.end)}`,
     `SUMMARY:${esc(titulo(c))}`,
     `DESCRIPTION:${esc(`${c.level}. ${c.detail}\nEdital: ${c.url}\nConfirme prazo e requisitos no edital oficial.`)}`,
     `URL:${c.url}`,
-    "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${esc(`Inscrição vence em 3 dias: ${c.org} · ${c.name}`)}`, "TRIGGER:-P3D", "END:VALARM",
-    "END:VEVENT", "END:VCALENDAR",
+    "BEGIN:VALARM",
+    "ACTION:DISPLAY",
+    `DESCRIPTION:${esc(`Inscrição vence em 3 dias: ${c.org} · ${c.name}`)}`,
+    "TRIGGER:-P3D",
+    "END:VALARM",
+    "END:VEVENT",
+    "END:VCALENDAR",
   ];
   return lines.map(fold).join("\r\n") + "\r\n";
 }

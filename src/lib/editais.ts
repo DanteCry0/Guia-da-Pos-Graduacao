@@ -19,7 +19,20 @@ export const calls = editais as unknown as Call[];
 
 export const callAreas = [...new Set(calls.map((c) => c.area))].sort();
 
-export const months = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+export const months = [
+  "jan",
+  "fev",
+  "mar",
+  "abr",
+  "mai",
+  "jun",
+  "jul",
+  "ago",
+  "set",
+  "out",
+  "nov",
+  "dez",
+];
 export const fmtDate = (iso: string) => {
   const [y, m, d] = iso.split("-");
   return `${d} ${months[Number(m) - 1]} ${y}`;
@@ -46,4 +59,5 @@ export const daysSince = (iso: string, now: Date) => {
 };
 
 /** Encerrado há mais de 30 dias: sai da lista padrão (continua em "Situação: Encerrados"). */
-export const isStale = (c: Call, now: Date) => callState(c, now).status === "enc" && daysSince(c.end, now) > 30;
+export const isStale = (c: Call, now: Date) =>
+  callState(c, now).status === "enc" && daysSince(c.end, now) > 30;

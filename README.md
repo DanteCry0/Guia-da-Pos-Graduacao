@@ -23,13 +23,13 @@ Requer Node 22.12 ou mais novo.
 
 ## Onde editar
 
-| O que | Onde |
-| --- | --- |
-| Cursos e instituições | `src/data/cursos.ts` (`institutions` e `courseRows`) |
-| Editais (nome, datas, link) | `src/data/editais.json`. O status é calculado por `src/lib/editais.ts` |
-| Quiz | `src/Quiz.tsx` |
-| Programas CAPES com nota | `src/Programas.tsx` e `public/data/programas.json` |
-| Título, descrição e idioma do site | `.figma/make/site.json` |
+| O que                              | Onde                                                                   |
+| ---------------------------------- | ---------------------------------------------------------------------- |
+| Cursos e instituições              | `src/data/cursos.ts` (`institutions` e `courseRows`)                   |
+| Editais (nome, datas, link)        | `src/data/editais.json`. O status é calculado por `src/lib/editais.ts` |
+| Quiz                               | `src/Quiz.tsx`                                                         |
+| Programas CAPES com nota           | `src/Programas.tsx` e `public/data/programas.json`                     |
+| Título, descrição e idioma do site | `.figma/make/site.json`                                                |
 
 ## Atualizar os programas CAPES
 
@@ -58,30 +58,30 @@ O workflow `.github/workflows/atualizar-programas.yml` roda toda segunda-feira e
 
 Abra `src/data/editais.json` no GitHub (lápis) e copie um bloco `{ ... }` existente. Campos:
 
-| Campo | Exemplo | Observação |
-| --- | --- | --- |
-| `name` | `"Engenharia Elétrica"` | nome do programa |
-| `org` | `"UFMA"` | instituição |
-| `level` | `"Mestrado e Doutorado"` | texto livre |
-| `area` | `"Engenharias"` | usa-se no filtro de área |
-| `start` | `"2026-11-03"` | abertura (AAAA-MM-DD); opcional, se não souber |
-| `end` | `"2026-12-04"` | último dia de inscrição (AAAA-MM-DD) |
-| `detail` | `"45 vagas..."` | resumo curto |
-| `url` | `"https://..."` | link do edital |
-| `fonte` | `"UFMA (oficial)"` | de onde veio a informação |
-| `verificado` | `"2026-11-23"` | dia em que você conferiu prazo e link; o site avisa quando passa de 14 dias |
+| Campo        | Exemplo                  | Observação                                                                  |
+| ------------ | ------------------------ | --------------------------------------------------------------------------- |
+| `name`       | `"Engenharia Elétrica"`  | nome do programa                                                            |
+| `org`        | `"UFMA"`                 | instituição                                                                 |
+| `level`      | `"Mestrado e Doutorado"` | texto livre                                                                 |
+| `area`       | `"Engenharias"`          | usa-se no filtro de área                                                    |
+| `start`      | `"2026-11-03"`           | abertura (AAAA-MM-DD); opcional, se não souber                              |
+| `end`        | `"2026-12-04"`           | último dia de inscrição (AAAA-MM-DD)                                        |
+| `detail`     | `"45 vagas..."`          | resumo curto                                                                |
+| `url`        | `"https://..."`          | link do edital                                                              |
+| `fonte`      | `"UFMA (oficial)"`       | de onde veio a informação                                                   |
+| `verificado` | `"2026-11-23"`           | dia em que você conferiu prazo e link; o site avisa quando passa de 14 dias |
 
 O status (aberto, programado, encerrado) e o aviso de "vence em N dias" são calculados sozinhos. Mantenha as vírgulas entre os blocos e confira as datas no edital oficial.
 
 ## Estrutura do código
 
-| Pasta ou arquivo | Função |
-| --- | --- |
-| `src/App.tsx` | telas e navegação |
-| `src/Quiz.tsx`, `src/Programas.tsx`, `src/Compare.tsx` | quiz, programas CAPES e comparação de cursos |
-| `src/data/` | dados editáveis: `cursos.ts` e `editais.json` |
-| `src/lib/` | regras sem React (áreas, notas, status de editais), cobertas por testes |
-| `tests/` | testes automáticos |
+| Pasta ou arquivo                                       | Função                                                                  |
+| ------------------------------------------------------ | ----------------------------------------------------------------------- |
+| `src/App.tsx`                                          | telas e navegação                                                       |
+| `src/Quiz.tsx`, `src/Programas.tsx`, `src/Compare.tsx` | quiz, programas CAPES e comparação de cursos                            |
+| `src/data/`                                            | dados editáveis: `cursos.ts` e `editais.json`                           |
+| `src/lib/`                                             | regras sem React (áreas, notas, status de editais), cobertas por testes |
+| `tests/`                                               | testes automáticos                                                      |
 
 ## Testes e verificação
 

@@ -4,7 +4,17 @@ import { lvText, norm, useProgramMeta, usePrograms, type Prog } from "./programs
 
 const PAGE = 60;
 
-function Field({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {
+function Field({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+}) {
   return (
     <label className="select-wrap">
       <span>{label}</span>
@@ -31,7 +41,8 @@ export default function Programas() {
   const meta = useProgramMeta();
   const [shown, setShown] = useState(PAGE);
 
-  const opts = (k: keyof Prog) => [...new Set((data ?? []).map((p) => String(p[k])))].filter(Boolean).sort();
+  const opts = (k: keyof Prog) =>
+    [...new Set((data ?? []).map((p) => String(p[k])))].filter(Boolean).sort();
   const list = useMemo(
     () =>
       (data ?? [])
@@ -59,8 +70,9 @@ export default function Programas() {
       </div>
       <div className="info-banner">
         <p>
-          A nota resume a avaliação do programa: 3 é o mínimo para ser reconhecido, e 6 e 7 indicam nível
-          internacional. Os dados vêm do Portal de Dados Abertos da CAPES e podem estar defasados em relação ao{" "}
+          A nota resume a avaliação do programa: 3 é o mínimo para ser reconhecido, e 6 e 7 indicam
+          nível internacional. Os dados vêm do Portal de Dados Abertos da CAPES e podem estar
+          defasados em relação ao{" "}
           <a href="https://sucupira.capes.gov.br/programas" target="_blank" rel="noreferrer">
             Sucupira
           </a>
@@ -69,7 +81,8 @@ export default function Programas() {
       </div>
       {meta && (
         <p className="call-count">
-          Base de dados da CAPES: {meta.anoBase}. Lista atualizada no PósGuia em {fmtDate(meta.geradoEm)}.
+          Base de dados da CAPES: {meta.anoBase}. Lista atualizada no PósGuia em{" "}
+          {fmtDate(meta.geradoEm)}.
         </p>
       )}
       {data === null && <p className="call-count">Carregando programas…</p>}
@@ -77,9 +90,15 @@ export default function Programas() {
         <div className="empty-state">
           <h3>Os dados dos programas ainda não foram carregados</h3>
           <p>
-            Gere o arquivo <b>public/data/programas.json</b> rodando <b>pnpm atualizar-programas</b>. Enquanto isso, consulte os programas direto no Sucupira.
+            Gere o arquivo <b>public/data/programas.json</b> rodando <b>pnpm atualizar-programas</b>
+            . Enquanto isso, consulte os programas direto no Sucupira.
           </p>
-          <a className="btn-link" href="https://sucupira.capes.gov.br/programas" target="_blank" rel="noreferrer">
+          <a
+            className="btn-link"
+            href="https://sucupira.capes.gov.br/programas"
+            target="_blank"
+            rel="noreferrer"
+          >
             Abrir no Sucupira
           </a>
         </div>
@@ -90,17 +109,65 @@ export default function Programas() {
             <label className="select-wrap">
               <span>Buscar</span>
               <div>
-                <input value={q} onChange={(e) => { setQ(e.target.value); setShown(PAGE); }} placeholder="Programa ou instituição" />
+                <input
+                  value={q}
+                  onChange={(e) => {
+                    setQ(e.target.value);
+                    setShown(PAGE);
+                  }}
+                  placeholder="Programa ou instituição"
+                />
               </div>
             </label>
-            <Field label="Nota mínima" value={nota} onChange={(v) => { setNota(v); setShown(PAGE); }} options={["3", "4", "5", "6", "7"]} />
-            <Field label="Área de avaliação" value={area} onChange={(v) => { setArea(v); setShown(PAGE); }} options={opts("sa")} />
-            <Field label="Estado" value={uf} onChange={(v) => { setUf(v); setShown(PAGE); }} options={opts("uf")} />
-            <Field label="Nível" value={nivel} onChange={(v) => { setNivel(v); setShown(PAGE); }} options={["Mestrado", "Doutorado"]} />
-            <Field label="Modalidade" value={mod} onChange={(v) => { setMod(v); setShown(PAGE); }} options={opts("m")} />
+            <Field
+              label="Nota mínima"
+              value={nota}
+              onChange={(v) => {
+                setNota(v);
+                setShown(PAGE);
+              }}
+              options={["3", "4", "5", "6", "7"]}
+            />
+            <Field
+              label="Área de avaliação"
+              value={area}
+              onChange={(v) => {
+                setArea(v);
+                setShown(PAGE);
+              }}
+              options={opts("sa")}
+            />
+            <Field
+              label="Estado"
+              value={uf}
+              onChange={(v) => {
+                setUf(v);
+                setShown(PAGE);
+              }}
+              options={opts("uf")}
+            />
+            <Field
+              label="Nível"
+              value={nivel}
+              onChange={(v) => {
+                setNivel(v);
+                setShown(PAGE);
+              }}
+              options={["Mestrado", "Doutorado"]}
+            />
+            <Field
+              label="Modalidade"
+              value={mod}
+              onChange={(v) => {
+                setMod(v);
+                setShown(PAGE);
+              }}
+              options={opts("m")}
+            />
           </div>
           <p className="call-count">
-            <strong>{list.length}</strong> {list.length === 1 ? "programa" : "programas"}, ordenados pela maior nota
+            <strong>{list.length}</strong> {list.length === 1 ? "programa" : "programas"}, ordenados
+            pela maior nota
           </p>
           <div className="prog-grid">
             {list.slice(0, shown).map((p, i) => (
