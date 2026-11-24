@@ -103,6 +103,7 @@ async function main() {
   if (!records.length) throw new Error("Nenhum registro recebido.");
 
   const keys = Object.keys(records[0]);
+  console.log(`Colunas disponíveis (${keys.length}): ${keys.join(", ")}`);
   const find = (names) => keys.find((k) => names.includes(k.trim().toUpperCase()));
   const col = Object.fromEntries(Object.entries(COLS).map(([k, v]) => [k, find(v)]));
   const faltam = ["n", "ie", "uf", "a", "nota"].filter((k) => !col[k]);
