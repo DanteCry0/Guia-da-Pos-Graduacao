@@ -36,7 +36,7 @@ export default function Programas() {
           (p) =>
             (!q || norm(`${p.n} ${p.ie} ${p.sg}`).includes(norm(q))) &&
             (!nota || p.nota >= Number(nota)) &&
-            (!area || p.a === area) &&
+            (!area || p.sa === area) &&
             (!uf || p.uf === uf) &&
             (!mod || p.m === mod),
         )
@@ -85,7 +85,7 @@ export default function Programas() {
               </div>
             </label>
             <Field label="Nota mínima" value={nota} onChange={(v) => { setNota(v); setShown(PAGE); }} options={["3", "4", "5", "6", "7"]} />
-            <Field label="Área de avaliação" value={area} onChange={(v) => { setArea(v); setShown(PAGE); }} options={opts("a")} />
+            <Field label="Área de avaliação" value={area} onChange={(v) => { setArea(v); setShown(PAGE); }} options={opts("sa")} />
             <Field label="Estado" value={uf} onChange={(v) => { setUf(v); setShown(PAGE); }} options={opts("uf")} />
             <Field label="Modalidade" value={mod} onChange={(v) => { setMod(v); setShown(PAGE); }} options={opts("m")} />
           </div>
@@ -105,7 +105,7 @@ export default function Programas() {
                     {p.ie} · {p.uf}
                   </p>
                   <small>
-                    {p.a} · {p.m}
+                    {p.sa} · {p.m}
                   </small>
                 </div>
               </article>

@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Programas from "./Programas";
 import Quiz from "./Quiz";
 import editais from "./data/editais.json";
-import { notaFor, relatedProgs, usePrograms } from "./programs";
+import { canonSub, gaOf, norm as pnorm, notaFor, usePrograms } from "./programs";
 
 type IconName =
   | "search"
@@ -155,6 +155,13 @@ type Course = {
   subarea: string;
   mode: string;
   link?: string;
+  capes?: boolean; // programa vindo dos dados abertos da CAPES
+  nota?: string;
+  sg?: string;
+  ie?: string;
+  uf?: string;
+  tipo?: string;
+  prog?: string;
 };
 
 const courseRows: Array<[string, string, string, string, string, string?, string?]> = [
@@ -267,16 +274,17 @@ const courseRows: Array<[string, string, string, string, string, string?, string
   ],
 ];
 
-const courses: Course[] = courseRows.map((c, id) => ({
-  id,
-  institution: c[0],
-  name: c[1],
-  levels: c[2],
-  area: c[3],
-  subarea: c[4],
-  mode: c[5] || "Presencial",
-  link: c[6],
-}));
+const SUB_FIX: Record<string, string> = {
+  "Antropologia Social": "Antropologia / Arqueologia",
+  "Ciência Política e Sociologia (IESP)": "Sociologia",
+  "Ensino de Matemática": "Ensino",
+};
+const courses: Course[] = courseRows.map((c, id) => {
+  const subarea = SUB_FIX[c[1]] ?? canonSub(c[4]);
+  return { id, institution: c[0], name: c[1], levels: c[2], area: gaOf(subarea) ?? c[3], subarea, mode: c[5] || "Presencial", link: c[6] };
+});
+const instOf = (c: Course): [string, string, string, string] =>
+  c.capes ? [c.sg || c.ie || "", c.uf || "", c.tipo || "", c.link || ""] : institutions[c.institution];
 
 type Call = {
   name: string;
@@ -362,22 +370,36 @@ export default function App() {
   const [callQuery, setCallQuery] = useState("");
   const [sort, setSort] = useState("Relevância");
   const [saved, setSaved] = useState<number[]>([]);
+  const progs = usePrograms();
+  const [shown, setShown] = useState(30);
+  // Catálogo manual (com links e lato sensu) + programas reais da CAPES.
+  const allCourses = useMemo(() => {
+    const key = (n: string, s: string) => pnorm(s) + "|" + pnorm(n.replace(/\(.*?\)/g, "")).trim();
+    const catalog = courses.map((c) => ({ ...c, nota: notaFor(c.name, c.levels, institutions[c.institution][0], progs) ?? undefined }));
+    const catKeys = new Set(courses.filter((c) => /[MD]/.test(c.levels)).map((c) => key(c.name, institutions[c.institution][0])));
+    const counts = new Map<string, number>();
+    (progs ?? []).forEach((p) => counts.set(key(p.n, p.sg), (counts.get(key(p.n, p.sg)) ?? 0) + 1));
+    const extra = (progs ?? [])
+      .filter((p) => !(catKeys.has(key(p.n, p.sg)) && counts.get(key(p.n, p.sg)) === 1))
+      .map((p, i): Course => ({
+        id: 100000 + i, institution: "", name: p.n, levels: "MD", area: p.ga, subarea: p.sa, mode: "Presencial",
+        capes: true, nota: String(p.nota), sg: p.sg, ie: p.ie, uf: p.uf, tipo: p.t ?? "", prog: p.m,
+        link: `https://www.google.com/search?q=${encodeURIComponent(`${p.n} ${p.sg || p.ie} pós-graduação`)}`,
+      }));
+    return [...catalog, ...extra];
+  }, [progs]);
+  const areas = useMemo(() => [...new Set(allCourses.map((c) => c.area))].sort(), [allCourses]);
+  const states = useMemo(() => [...new Set(allCourses.map((c) => instOf(c)[1]))].filter(Boolean).sort(), [allCourses]);
   const [onlySaved, setOnlySaved] = useState(false);
   const [mobileFilters, setMobileFilters] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const filtered = useMemo(() => {
-    const q = query
-      .toLocaleLowerCase("pt-BR")
-      .normalize("NFD")
-      .replace(/\p{Diacritic}/gu, "");
-    return courses
+    const q = pnorm(query);
+    return allCourses
       .filter((c) => {
-        const inst = institutions[c.institution];
-        const haystack = `${c.name} ${inst[0]} ${c.area} ${c.subarea}`
-          .toLocaleLowerCase("pt-BR")
-          .normalize("NFD")
-          .replace(/\p{Diacritic}/gu, "");
+        const inst = instOf(c);
+        const haystack = pnorm(`${c.name} ${inst[0]} ${c.ie ?? ""} ${c.area} ${c.subarea}`);
         return (
           (!q || haystack.includes(q)) &&
           (!level || c.levels.includes(level)) &&
@@ -389,21 +411,22 @@ export default function App() {
           (!onlySaved || saved.includes(c.id))
         );
       })
-      .sort((a, b) => (sort === "Nome A–Z" ? a.name.localeCompare(b.name) : 0));
-  }, [query, level, area, sub, state, mode, type, onlySaved, saved, sort]);
+      .sort((a, b) =>
+        sort === "Nome A–Z"
+          ? a.name.localeCompare(b.name, "pt-BR")
+          : sort === "Maior nota CAPES"
+            ? (parseInt(b.nota ?? "0") || 0) - (parseInt(a.nota ?? "0") || 0)
+            : 0,
+      );
+  }, [allCourses, query, level, area, sub, state, mode, type, onlySaved, saved, sort]);
+  useEffect(() => {
+    setShown(30);
+  }, [query, level, area, sub, state, mode, type, onlySaved, sort]);
 
   const subareas = useMemo(
-    () => [...new Set(courses.filter((c) => !area || c.area === area).map((c) => c.subarea))].sort(),
-    [area],
+    () => [...new Set(allCourses.filter((c) => !area || c.area === area).map((c) => c.subarea))].sort(),
+    [area, allCourses],
   );
-  const progs = usePrograms();
-  const related = useMemo(() => {
-    if (!progs || !(area || sub) || level === "E" || level === "B") return [];
-    return relatedProgs(progs, area, sub, courses)
-      .filter((p) => !state || p.uf === state)
-      .sort((a, b) => b.nota - a.nota || a.n.localeCompare(b.n, "pt-BR"))
-      .slice(0, 8);
-  }, [progs, area, sub, level, state]);
   const activeFilters = [level, area, sub, state, mode, type].filter(Boolean).length;
   const clearFilters = () => {
     setLevel("");
@@ -617,6 +640,7 @@ export default function App() {
                     <select value={sort} onChange={(e) => setSort(e.target.value)}>
                       <option>Relevância</option>
                       <option>Nome A–Z</option>
+                      <option>Maior nota CAPES</option>
                     </select>
                     <Icon name="chevron" size={15} />
                   </label>
@@ -627,11 +651,17 @@ export default function App() {
                     <button onClick={() => setOnlySaved(false)}>Ver todos</button>
                   </div>
                 )}
+                {progs && progs.length > 0 && (
+                  <p className="capes-note">
+                    A lista inclui os programas de mestrado e doutorado reconhecidos pela CAPES, com a nota. Os dados abertos não informam os
+                    níveis oferecidos nem a modalidade de cada programa: confira no site antes de se inscrever.
+                  </p>
+                )}
                 <div className="course-list">
-                  {filtered.map((course) => {
-                    const inst = institutions[course.institution];
+                  {filtered.slice(0, shown).map((course) => {
+                    const inst = instOf(course);
                     const isSaved = saved.includes(course.id);
-                    const nota = notaFor(course.name, course.levels, inst[0], progs);
+                    const nota = course.nota;
                     return (
                       <article className="course-card" key={course.id}>
                         <div className="institution-avatar">
@@ -640,7 +670,8 @@ export default function App() {
                         <div className="course-body">
                           <div className="card-topline">
                             <span>
-                              {inst[0]} · {inst[2]}
+                              {inst[0]}
+                              {inst[2] ? ` · ${inst[2]}` : ""}
                             </span>
                             <button
                               className={isSaved ? "heart-button saved" : "heart-button"}
@@ -658,12 +689,17 @@ export default function App() {
                           </div>
                           <h3>{course.name}</h3>
                           <div className="pills">
-                            {course.levels.split("").map((l) => (
-                              <span className="level-pill" key={l}>
-                                {levelNames[l]}
-                              </span>
-                            ))}
+                            {course.capes ? (
+                              <span className="level-pill">Mestrado / Doutorado</span>
+                            ) : (
+                              course.levels.split("").map((l) => (
+                                <span className="level-pill" key={l}>
+                                  {levelNames[l]}
+                                </span>
+                              ))
+                            )}
                             <span>{course.subarea}</span>
+                            {course.prog && <span>{course.prog}</span>}
                             {nota && (
                               <span className="nota-pill" title="Nota da avaliação da CAPES (3 a 7)">
                                 Nota CAPES {nota}
@@ -689,7 +725,7 @@ export default function App() {
                           target="_blank"
                           rel="noreferrer"
                         >
-                          Ver detalhes <Icon name="arrow" size={17} />
+                          {course.capes ? "Buscar programa" : "Ver detalhes"} <Icon name="arrow" size={17} />
                         </a>
                       </article>
                     );
@@ -704,34 +740,12 @@ export default function App() {
                       <button onClick={clearFilters}>Limpar filtros</button>
                     </div>
                   )}
-                </div>
-                {related.length > 0 && (
-                  <div className="related-box">
-                    <h3>Programas reconhecidos pela CAPES{sub ? ` em ${sub}` : ` em ${area}`}</h3>
-                    <div className="prog-grid">
-                      {related.map((p, i) => (
-                        <article className="prog-card" key={p.n + p.sg + i}>
-                          <span className={`nota nota-${p.nota}`} title="Nota CAPES">
-                            {p.nota}
-                          </span>
-                          <div>
-                            <h3>{p.n}</h3>
-                            <p>
-                              {p.sg ? `${p.sg} · ` : ""}
-                              {p.ie} · {p.uf}
-                            </p>
-                            <small>
-                              {p.a} · {p.m}
-                            </small>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                    <button className="more-btn" onClick={() => setTab("programas")}>
-                      Ver todos os programas CAPES
+                  {filtered.length > shown && (
+                    <button className="more-btn" onClick={() => setShown(shown + 30)}>
+                      Mostrar mais ({filtered.length - shown} restantes)
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </section>
             </div>
           </main>

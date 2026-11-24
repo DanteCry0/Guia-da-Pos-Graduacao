@@ -1399,3 +1399,6 @@ footer p {
 .nota-pill{background:var(--green)!important;color:#fff!important;font-weight:700}
 .related-box{margin-top:22px;display:grid;gap:14px}.related-box>h3{margin:0;font-size:18px;color:var(--ink)}
 .call-source{display:block;margin-top:6px;color:#71807a;font-size:12px}
+
+.capes-note{margin:0 0 12px;padding:10px 14px;border-radius:10px;background:#eef5f2;color:#4f605a;font-size:13px;line-height:1.5}
+.course-list>.more-btn{justify-self:center}
