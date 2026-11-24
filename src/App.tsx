@@ -7,7 +7,16 @@ import Apoio from "./Apoio.tsx";
 import Modal from "./Modal.tsx";
 import { norm as pnorm, notaFor, usePrograms } from "./programs";
 import { courses, duration, institutions, instOf, levelNames, type Course } from "./data/cursos.ts";
-import { callAreas, calls, callState, daysSince, fmtDate, isStale, statusOrder, type Call } from "./lib/editais.ts";
+import {
+  callAreas,
+  calls,
+  callState,
+  daysSince,
+  fmtDate,
+  isStale,
+  statusOrder,
+  type Call,
+} from "./lib/editais.ts";
 import { buildIcs, googleCalendarUrl, icsFileName } from "./lib/ics.ts";
 import { reportEditalMailto, suggestEditalMailto } from "./lib/contato.ts";
 import { CONTACT_EMAIL } from "./config.ts";
@@ -184,21 +193,45 @@ export default function App() {
   // Catálogo manual (com links e lato sensu) + programas reais da CAPES.
   const allCourses = useMemo(() => {
     const key = (n: string, s: string) => pnorm(s) + "|" + pnorm(n.replace(/\(.*?\)/g, "")).trim();
-    const catalog = courses.map((c) => ({ ...c, nota: notaFor(c.name, c.levels, institutions[c.institution][0], progs) ?? undefined }));
-    const catKeys = new Set(courses.filter((c) => /[MD]/.test(c.levels)).map((c) => key(c.name, institutions[c.institution][0])));
+    const catalog = courses.map((c) => ({
+      ...c,
+      nota: notaFor(c.name, c.levels, institutions[c.institution][0], progs) ?? undefined,
+    }));
+    const catKeys = new Set(
+      courses
+        .filter((c) => /[MD]/.test(c.levels))
+        .map((c) => key(c.name, institutions[c.institution][0])),
+    );
     const counts = new Map<string, number>();
     (progs ?? []).forEach((p) => counts.set(key(p.n, p.sg), (counts.get(key(p.n, p.sg)) ?? 0) + 1));
     const extra = (progs ?? [])
       .filter((p) => !(catKeys.has(key(p.n, p.sg)) && counts.get(key(p.n, p.sg)) === 1))
       .map((p, i): Course => ({
-        id: 100000 + i, key: `p:${p.sg || p.ie}:${p.n}:${p.uf}`, institution: "", name: p.n, levels: p.lv || "MD", lvKnown: !!p.lv, area: p.ga, subarea: p.sa, mode: "Presencial",
-        capes: true, nota: String(p.nota), sg: p.sg, ie: p.ie, uf: p.uf, tipo: p.t ?? "", prog: p.m,
+        id: 100000 + i,
+        key: `p:${p.sg || p.ie}:${p.n}:${p.uf}`,
+        institution: "",
+        name: p.n,
+        levels: p.lv || "MD",
+        lvKnown: !!p.lv,
+        area: p.ga,
+        subarea: p.sa,
+        mode: "Presencial",
+        capes: true,
+        nota: String(p.nota),
+        sg: p.sg,
+        ie: p.ie,
+        uf: p.uf,
+        tipo: p.t ?? "",
+        prog: p.m,
         link: `https://www.google.com/search?q=${encodeURIComponent(`${p.n} ${p.sg || p.ie} pós-graduação`)}`,
       }));
     return [...catalog, ...extra];
   }, [progs]);
   const areas = useMemo(() => [...new Set(allCourses.map((c) => c.area))].sort(), [allCourses]);
-  const states = useMemo(() => [...new Set(allCourses.map((c) => instOf(c)[1]))].filter(Boolean).sort(), [allCourses]);
+  const states = useMemo(
+    () => [...new Set(allCourses.map((c) => instOf(c)[1]))].filter(Boolean).sort(),
+    [allCourses],
+  );
   const [onlySaved, setOnlySaved] = useState(qs.get("salvos") === "1");
   const [mobileFilters, setMobileFilters] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -236,14 +269,27 @@ export default function App() {
     const p = new URLSearchParams();
     if (tab !== "cursos") p.set("aba", tab);
     else
-      Object.entries({ q: query, nivel: level, area, sub, uf: state, modo: mode, tipo: type, ordem: sort === "Relevância" ? "" : sort, salvos: onlySaved ? "1" : "" }).forEach(
-        ([k, v]) => v && p.set(k, v),
-      );
+      Object.entries({
+        q: query,
+        nivel: level,
+        area,
+        sub,
+        uf: state,
+        modo: mode,
+        tipo: type,
+        ordem: sort === "Relevância" ? "" : sort,
+        salvos: onlySaved ? "1" : "",
+      }).forEach(([k, v]) => v && p.set(k, v));
     const s = p.toString();
-    window.history.replaceState(null, "", window.location.pathname + (s ? `?${s}` : "") + window.location.hash);
+    window.history.replaceState(
+      null,
+      "",
+      window.location.pathname + (s ? `?${s}` : "") + window.location.hash,
+    );
   }, [tab, query, level, area, sub, state, mode, type, sort, onlySaved]);
   const cmpItems = cmp.map((k) => allCourses.find((c) => c.key === k)).filter(Boolean) as Course[];
-  const toggleCmp = (k: string) => setCmp((c) => (c.includes(k) ? c.filter((x) => x !== k) : c.length < 3 ? [...c, k] : c));
+  const toggleCmp = (k: string) =>
+    setCmp((c) => (c.includes(k) ? c.filter((x) => x !== k) : c.length < 3 ? [...c, k] : c));
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -255,7 +301,8 @@ export default function App() {
   };
 
   const subareas = useMemo(
-    () => [...new Set(allCourses.filter((c) => !area || c.area === area).map((c) => c.subarea))].sort(),
+    () =>
+      [...new Set(allCourses.filter((c) => !area || c.area === area).map((c) => c.subarea))].sort(),
     [area, allCourses],
   );
   const activeFilters = [level, area, sub, state, mode, type].filter(Boolean).length;
@@ -294,9 +341,14 @@ export default function App() {
     );
   const openCount = callList.filter((c) => c.status === "ab").length;
   const hiddenOld = callStatus ? 0 : calls.filter((c) => isStale(c, now)).length;
-  const editaisUrl = typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}?aba=editais` : "";
+  const editaisUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}${window.location.pathname}?aba=editais`
+      : "";
   const downloadIcs = (c: Call) => {
-    const url = URL.createObjectURL(new Blob([buildIcs(c)], { type: "text/calendar;charset=utf-8" }));
+    const url = URL.createObjectURL(
+      new Blob([buildIcs(c)], { type: "text/calendar;charset=utf-8" }),
+    );
     const link = document.createElement("a");
     link.href = url;
     link.download = icsFileName(c);
@@ -512,7 +564,9 @@ export default function App() {
                 )}
                 {progs && progs.length > 0 && (
                   <p className="capes-note">
-                    A lista inclui os programas de mestrado e doutorado reconhecidos pela CAPES, com a nota. Os dados abertos não informam a modalidade (presencial ou EAD) de cada programa: confira no site antes de se inscrever.
+                    A lista inclui os programas de mestrado e doutorado reconhecidos pela CAPES, com
+                    a nota. Os dados abertos não informam a modalidade (presencial ou EAD) de cada
+                    programa: confira no site antes de se inscrever.
                   </p>
                 )}
                 <div className="course-list">
@@ -559,7 +613,10 @@ export default function App() {
                             <span>{course.subarea}</span>
                             {course.prog && <span>{course.prog}</span>}
                             {nota && (
-                              <span className="nota-pill" title="Nota da avaliação da CAPES (3 a 7)">
+                              <span
+                                className="nota-pill"
+                                title="Nota da avaliação da CAPES (3 a 7)"
+                              >
                                 Nota CAPES {nota}
                               </span>
                             )}
@@ -592,7 +649,8 @@ export default function App() {
                           target="_blank"
                           rel="noreferrer"
                         >
-                          {course.capes ? "Buscar programa" : "Ver detalhes"} <Icon name="arrow" size={17} />
+                          {course.capes ? "Buscar programa" : "Ver detalhes"}{" "}
+                          <Icon name="arrow" size={17} />
                         </a>
                       </article>
                     );
@@ -685,7 +743,8 @@ export default function App() {
             </p>
           </div>
           <p className="call-suggest">
-            Conhece um edital que não está aqui? <a href={suggestEditalMailto(CONTACT_EMAIL, editaisUrl)}>Sugira por e-mail</a>.
+            Conhece um edital que não está aqui?{" "}
+            <a href={suggestEditalMailto(CONTACT_EMAIL, editaisUrl)}>Sugira por e-mail</a>.
           </p>
           <div className="call-filters">
             <label className="select-wrap">
@@ -715,7 +774,8 @@ export default function App() {
           <p className="call-count">
             <strong>{callList.length}</strong> {callList.length === 1 ? "edital" : "editais"} ·{" "}
             {openCount} {openCount === 1 ? "aberto" : "abertos"}, ordenados pelo prazo mais próximo
-            {hiddenOld > 0 && ` · ${hiddenOld} encerrado${hiddenOld === 1 ? "" : "s"} há mais de 30 dias oculto${hiddenOld === 1 ? "" : "s"}`}
+            {hiddenOld > 0 &&
+              ` · ${hiddenOld} encerrado${hiddenOld === 1 ? "" : "s"} há mais de 30 dias oculto${hiddenOld === 1 ? "" : "s"}`}
           </p>
           <div className="call-grid">
             {callList.map((call) => {
@@ -736,7 +796,9 @@ export default function App() {
                 >
                   <div className="call-date">
                     <span className={call.soon ? "soon" : call.status}>{badge}</span>
-                    <small>{call.status === "prog" ? "Inscrições a partir de" : "Inscrições até"}</small>
+                    <small>
+                      {call.status === "prog" ? "Inscrições a partir de" : "Inscrições até"}
+                    </small>
                     <strong>{fmtDate(call.status === "prog" ? call.start! : call.end)}</strong>
                     {call.status === "ab" && !call.soon && (
                       <small className="days-left">{call.days} dias restantes</small>
@@ -754,7 +816,10 @@ export default function App() {
                         <Icon name="graduation" size={17} /> {call.level}
                       </span>
                       <span>
-                        <Icon name="calendar" size={17} /> {call.start ? `${fmtDate(call.start)} — ${fmtDate(call.end)}` : `até ${fmtDate(call.end)}`}
+                        <Icon name="calendar" size={17} />{" "}
+                        {call.start
+                          ? `${fmtDate(call.start)} — ${fmtDate(call.end)}`
+                          : `até ${fmtDate(call.end)}`}
                       </span>
                     </div>
                     <a href={call.url} target="_blank" rel="noreferrer">
@@ -764,7 +829,10 @@ export default function App() {
                       {call.fonte && <>Fonte: {call.fonte}. </>}
                       {call.verificado &&
                         (daysSince(call.verificado, now) > 14 ? (
-                          <b className="call-old">Verificado há {daysSince(call.verificado, now)} dias: confirme no edital.</b>
+                          <b className="call-old">
+                            Verificado há {daysSince(call.verificado, now)} dias: confirme no
+                            edital.
+                          </b>
                         ) : (
                           <>Verificado em {fmtDate(call.verificado)}.</>
                         ))}
@@ -775,12 +843,18 @@ export default function App() {
                           <a href={googleCalendarUrl(call)} target="_blank" rel="noreferrer">
                             Lembrete no Google Agenda
                           </a>
-                          <button type="button" className="link-btn" onClick={() => downloadIcs(call)}>
+                          <button
+                            type="button"
+                            className="link-btn"
+                            onClick={() => downloadIcs(call)}
+                          >
                             Baixar .ics
                           </button>
                         </>
                       )}
-                      <a href={reportEditalMailto(CONTACT_EMAIL, call, editaisUrl)}>Informar erro</a>
+                      <a href={reportEditalMailto(CONTACT_EMAIL, call, editaisUrl)}>
+                        Informar erro
+                      </a>
                     </div>
                   </div>
                 </article>

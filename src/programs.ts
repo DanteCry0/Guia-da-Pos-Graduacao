@@ -11,7 +11,12 @@ const load = () =>
     .then((r) => r.json())
     .then((d) =>
       Array.isArray(d)
-        ? (d as Omit<Prog, "ga" | "sa" | "lv" | "prof">[]).map((p) => ({ ...p, sa: roman(p.a), ga: gaOf(p.a) ?? "Multidisciplinar", ...levelsOf(p.nv, p.m) }))
+        ? (d as Omit<Prog, "ga" | "sa" | "lv" | "prof">[]).map((p) => ({
+            ...p,
+            sa: roman(p.a),
+            ga: gaOf(p.a) ?? "Multidisciplinar",
+            ...levelsOf(p.nv, p.m),
+          }))
         : [],
     )
     .catch(() => []));

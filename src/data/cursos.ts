@@ -174,7 +174,19 @@ const SUB_FIX: Record<string, string> = {
 };
 export const courses: Course[] = courseRows.map((c, id) => {
   const subarea = SUB_FIX[c[1]] ?? canonSub(c[4]);
-  return { id, key: `c:${c[0]}:${c[1]}`, institution: c[0], name: c[1], levels: c[2], area: gaOf(subarea) ?? c[3], subarea, mode: c[5] || "Presencial", link: c[6] };
+  return {
+    id,
+    key: `c:${c[0]}:${c[1]}`,
+    institution: c[0],
+    name: c[1],
+    levels: c[2],
+    area: gaOf(subarea) ?? c[3],
+    subarea,
+    mode: c[5] || "Presencial",
+    link: c[6],
+  };
 });
 export const instOf = (c: Course): [string, string, string, string] =>
-  c.capes ? [c.sg || c.ie || "", c.uf || "", c.tipo || "", c.link || ""] : institutions[c.institution];
+  c.capes
+    ? [c.sg || c.ie || "", c.uf || "", c.tipo || "", c.link || ""]
+    : institutions[c.institution];

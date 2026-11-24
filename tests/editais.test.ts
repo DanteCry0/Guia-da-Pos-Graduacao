@@ -4,7 +4,16 @@ import editais from "../src/data/editais.json" with { type: "json" };
 import { callState, daysSince, fmtDate, isStale } from "../src/lib/editais.ts";
 import type { Call } from "../src/lib/editais.ts";
 
-const call = (start: string | undefined, end: string): Call => ({ name: "x", org: "y", level: "Mestrado", area: "z", start, end, detail: "", url: "https://exemplo.org" });
+const call = (start: string | undefined, end: string): Call => ({
+  name: "x",
+  org: "y",
+  level: "Mestrado",
+  area: "z",
+  start,
+  end,
+  detail: "",
+  url: "https://exemplo.org",
+});
 const dia = (m: number, d: number, h = 12) => new Date(2026, m - 1, d, h, 0, 0);
 
 test("edital que vence em 7 dias está aberto e em destaque", () => {
@@ -42,16 +51,21 @@ test("dados: todos os editais têm os campos e datas válidas", () => {
   const vistos = new Set<string>();
   for (const e of editais as Call[]) {
     const nome = `${e.org} · ${e.name}`;
-    for (const k of ["name", "org", "level", "area", "detail", "url"] as const) assert.ok(e[k]?.trim(), `${nome}: campo "${k}" vazio`);
+    for (const k of ["name", "org", "level", "area", "detail", "url"] as const)
+      assert.ok(e[k]?.trim(), `${nome}: campo "${k}" vazio`);
     assert.match(e.url, /^https:\/\//, `${nome}: link precisa começar com https://`);
     const datas = [e.start, e.end].filter(Boolean) as string[];
     for (const d of datas) {
       assert.match(d, /^\d{4}-\d{2}-\d{2}$/, `${nome}: data "${d}" fora do formato AAAA-MM-DD`);
       const [y, m, dd] = d.split("-").map(Number);
       const real = new Date(y, m - 1, dd);
-      assert.ok(real.getFullYear() === y && real.getMonth() === m - 1 && real.getDate() === dd, `${nome}: data "${d}" não existe`);
+      assert.ok(
+        real.getFullYear() === y && real.getMonth() === m - 1 && real.getDate() === dd,
+        `${nome}: data "${d}" não existe`,
+      );
     }
-    if (e.verificado) assert.match(e.verificado, /^\d{4}-\d{2}-\d{2}$/, `${nome}: "verificado" fora do formato`);
+    if (e.verificado)
+      assert.match(e.verificado, /^\d{4}-\d{2}-\d{2}$/, `${nome}: "verificado" fora do formato`);
     if (e.start) assert.ok(e.start <= e.end, `${nome}: início depois do fim`);
     const chave = `${nome}|${e.end}`;
     assert.ok(!vistos.has(chave), `${nome}: edital duplicado`);

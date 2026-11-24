@@ -6,20 +6,47 @@ const rows: [string, (c: Course) => ReactNode][] = [
   ["Instituição", (c) => (c.capes && c.ie ? `${instOf(c)[0]} — ${c.ie}` : instOf(c)[0])],
   ["Estado", (c) => instOf(c)[1] || "—"],
   ["Tipo", (c) => instOf(c)[2] || "não informado"],
-  ["Nível", (c) => (c.capes && !c.lvKnown ? "Mestrado / Doutorado (confira no site)" : c.levels.split("").map((l) => levelNames[l]).join(", "))],
+  [
+    "Nível",
+    (c) =>
+      c.capes && !c.lvKnown
+        ? "Mestrado / Doutorado (confira no site)"
+        : c.levels
+            .split("")
+            .map((l) => levelNames[l])
+            .join(", "),
+  ],
   ["Área", (c) => c.area],
   ["Subárea", (c) => c.subarea],
   ["Modalidade", (c) => (c.capes ? "Presencial (confira no site)" : c.mode)],
-  ["Duração", (c) => c.levels.split("").map((l) => duration[l]).join(" / ")],
+  [
+    "Duração",
+    (c) =>
+      c.levels
+        .split("")
+        .map((l) => duration[l])
+        .join(" / "),
+  ],
   ["Nota CAPES", (c) => c.nota ?? "—"],
-  ["Link", (c) => (
-    <a href={c.link || instOf(c)[3]} target="_blank" rel="noreferrer">
-      {c.capes ? "Buscar programa" : "Ver site"}
-    </a>
-  )],
+  [
+    "Link",
+    (c) => (
+      <a href={c.link || instOf(c)[3]} target="_blank" rel="noreferrer">
+        {c.capes ? "Buscar programa" : "Ver site"}
+      </a>
+    ),
+  ],
 ];
 
-export default function Compare({ items, onClose, onRemove }: { items: Course[]; onClose: () => void; onRemove: (key: string) => void }) {
+export default function Compare({
+  items,
+  onClose,
+  onRemove,
+}: {
+  items: Course[];
+  onClose: () => void;
+  onRemove: (key: string) => void;
+}) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -36,7 +63,13 @@ export default function Compare({ items, onClose, onRemove }: { items: Course[];
 
   return (
     <div className="dlg-backdrop" onClick={onClose}>
-      <div className="dlg" role="dialog" aria-modal="true" aria-labelledby="cmp-title" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="dlg"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cmp-title"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="dlg-head">
           <h2 id="cmp-title">Comparar cursos</h2>
           <button ref={closeRef} className="more-btn" onClick={onClose}>
@@ -53,7 +86,11 @@ export default function Compare({ items, onClose, onRemove }: { items: Course[];
                 {items.map((c) => (
                   <th scope="col" key={c.key}>
                     {c.name}
-                    <button className="link-btn" onClick={() => onRemove(c.key)} aria-label={`Remover ${c.name} da comparação`}>
+                    <button
+                      className="link-btn"
+                      onClick={() => onRemove(c.key)}
+                      aria-label={`Remover ${c.name} da comparação`}
+                    >
                       Remover
                     </button>
                   </th>
