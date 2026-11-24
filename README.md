@@ -69,6 +69,7 @@ Abra `src/data/editais.json` no GitHub (lápis) e copie um bloco `{ ... }` exist
 | `detail` | `"45 vagas..."` | resumo curto |
 | `url` | `"https://..."` | link do edital |
 | `fonte` | `"UFMA (oficial)"` | de onde veio a informação |
+| `verificado` | `"2026-11-23"` | dia em que você conferiu prazo e link; o site avisa quando passa de 14 dias |
 
 O status (aberto, programado, encerrado) e o aviso de "vence em N dias" são calculados sozinhos. Mantenha as vírgulas entre os blocos e confira as datas no edital oficial.
 
@@ -98,3 +99,18 @@ A aba e os filtros de Explorar cursos ficam na URL (`?aba=cursos&area=...&sub=..
 ## Favoritos e comparação
 
 Os cursos salvos ficam no navegador de quem usa (`localStorage`, chave `posguia:salvos`). A comparação aceita até 3 cursos e não é salva.
+
+## Editais: lembrete, reporte e limpeza
+
+- Cada edital aberto ou programado tem **Lembrete no Google Agenda** e **Baixar .ics** (evento no último dia de inscrição, com alerta 3 dias antes).
+- **Informar erro** e **Sugira por e-mail** abrem o e-mail já preenchido. O endereço de destino fica em `src/config.ts` (`CONTACT_EMAIL`).
+- Editais encerrados há mais de 30 dias saem da lista padrão e continuam em **Situação: Encerrados**.
+
+## Sobre e ajuda, Pix e QR Code
+
+A aba **Sobre e ajuda** (`src/Ajuda.tsx`) reúne FAQ, fontes dos dados, contato e o bloco de apoio (`src/Apoio.tsx`). O mesmo bloco abre em uma janela pelo link **Apoie o projeto** no rodapé.
+
+- **Dados de pagamento:** `src/config.ts` (`PIX_KEY`, `PIX_NAME`, `PIX_CITY`, `LIVEPIX_URL`). Trocou a chave? Altere só ali.
+- **Pix copia e cola e QR Code:** gerados no próprio navegador (`src/lib/pix.ts` e `src/lib/qr.ts`), com valor e mensagem opcionais. A mensagem vai sem acentos e é cortada no tamanho máximo aceito pelo Pix.
+- **Biblioteca de QR Code:** `uqr` (licença MIT), copiada em `src/vendor/` para não depender de pacote novo.
+- **Teste antes de divulgar:** faça um Pix de R$ 1,00 de outra conta, lendo o QR Code e também pelo copia e cola, e confira o nome que o banco mostra.

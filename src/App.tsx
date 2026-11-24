@@ -2,9 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import Programas from "./Programas";
 import Quiz from "./Quiz";
 import Compare from "./Compare";
+import Ajuda from "./Ajuda.tsx";
+import Apoio from "./Apoio.tsx";
+import Modal from "./Modal.tsx";
 import { norm as pnorm, notaFor, usePrograms } from "./programs";
 import { courses, duration, institutions, instOf, levelNames, type Course } from "./data/cursos.ts";
-import { callAreas, calls, callState, fmtDate, statusOrder } from "./lib/editais.ts";
+import { callAreas, calls, callState, daysSince, fmtDate, isStale, statusOrder, type Call } from "./lib/editais.ts";
+import { buildIcs, googleCalendarUrl, icsFileName } from "./lib/ics.ts";
+import { reportEditalMailto, suggestEditalMailto } from "./lib/contato.ts";
+import { CONTACT_EMAIL } from "./config.ts";
 
 type IconName =
   | "search"
@@ -112,7 +118,7 @@ function Icon({
 }
 
 const qs = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
-const TABS = ["cursos", "editais", "guia", "programas", "quiz"] as const;
+const TABS = ["cursos", "editais", "guia", "programas", "quiz", "ajuda"] as const;
 type Tab = (typeof TABS)[number];
 
 function Select({
@@ -172,6 +178,7 @@ export default function App() {
   const [cmp, setCmp] = useState<string[]>([]);
   const [showCmp, setShowCmp] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showApoio, setShowApoio] = useState(false);
   const progs = usePrograms();
   const [shown, setShown] = useState(30);
   // Catálogo manual (com links e lato sensu) + programas reais da CAPES.
@@ -272,7 +279,7 @@ export default function App() {
     .map((c) => ({ ...c, ...callState(c, now) }))
     .filter(
       (c) =>
-        (!callStatus || c.status === callStatus) &&
+        (callStatus ? c.status === callStatus : !isStale(c, now)) &&
         (!callArea || c.area === callArea) &&
         (!callQuery || pnorm(`${c.name} ${c.org}`).includes(pnorm(callQuery))),
     )
@@ -286,6 +293,16 @@ export default function App() {
             : a.end.localeCompare(b.end)),
     );
   const openCount = callList.filter((c) => c.status === "ab").length;
+  const hiddenOld = callStatus ? 0 : calls.filter((c) => isStale(c, now)).length;
+  const editaisUrl = typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}?aba=editais` : "";
+  const downloadIcs = (c: Call) => {
+    const url = URL.createObjectURL(new Blob([buildIcs(c)], { type: "text/calendar;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = icsFileName(c);
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   const filterContent = (
     <div className="filter-fields">
@@ -356,6 +373,7 @@ export default function App() {
                 ["guia", "Guia de escolha"],
                 ["programas", "Programas CAPES"],
                 ["quiz", "Quiz"],
+                ["ajuda", "Sobre e ajuda"],
               ] as const
             ).map(([id, label]) => (
               <button
@@ -627,6 +645,12 @@ export default function App() {
         />
       )}
 
+      {tab === "ajuda" && <Ajuda />}
+      {showApoio && (
+        <Modal title="Apoie o PósGuia" onClose={() => setShowApoio(false)}>
+          <Apoio />
+        </Modal>
+      )}
       {tab === "programas" && <Programas />}
       {tab === "quiz" && (
         <Quiz
@@ -661,6 +685,9 @@ export default function App() {
               no edital oficial.
             </p>
           </div>
+          <p className="call-suggest">
+            Conhece um edital que não está aqui? <a href={suggestEditalMailto(CONTACT_EMAIL, editaisUrl)}>Sugira por e-mail</a>.
+          </p>
           <div className="call-filters">
             <label className="select-wrap">
               <span>Situação</span>
@@ -689,6 +716,7 @@ export default function App() {
           <p className="call-count">
             <strong>{callList.length}</strong> {callList.length === 1 ? "edital" : "editais"} ·{" "}
             {openCount} {openCount === 1 ? "aberto" : "abertos"}, ordenados pelo prazo mais próximo
+            {hiddenOld > 0 && ` · ${hiddenOld} encerrado${hiddenOld === 1 ? "" : "s"} há mais de 30 dias oculto${hiddenOld === 1 ? "" : "s"}`}
           </p>
           <div className="call-grid">
             {callList.map((call) => {
@@ -733,7 +761,28 @@ export default function App() {
                     <a href={call.url} target="_blank" rel="noreferrer">
                       Ver edital <Icon name="arrow" size={17} />
                     </a>
-                    {call.fonte && <small className="call-source">Fonte: {call.fonte}</small>}
+                    <small className="call-source">
+                      {call.fonte && <>Fonte: {call.fonte}. </>}
+                      {call.verificado &&
+                        (daysSince(call.verificado, now) > 14 ? (
+                          <b className="call-old">Verificado há {daysSince(call.verificado, now)} dias: confirme no edital.</b>
+                        ) : (
+                          <>Verificado em {fmtDate(call.verificado)}.</>
+                        ))}
+                    </small>
+                    <div className="call-tools">
+                      {call.status !== "enc" && (
+                        <>
+                          <a href={googleCalendarUrl(call)} target="_blank" rel="noreferrer">
+                            Lembrete no Google Agenda
+                          </a>
+                          <button type="button" className="link-btn" onClick={() => downloadIcs(call)}>
+                            Baixar .ics
+                          </button>
+                        </>
+                      )}
+                      <a href={reportEditalMailto(CONTACT_EMAIL, call, editaisUrl)}>Informar erro</a>
+                    </div>
                   </div>
                 </article>
               );
@@ -945,6 +994,19 @@ export default function App() {
           <p>
             Lista inicial e não exaustiva. Confirme sempre as informações no site da instituição.
           </p>
+          <button
+            type="button"
+            className="footer-link"
+            onClick={() => {
+              setTab("ajuda");
+              window.scrollTo(0, 0);
+            }}
+          >
+            Sobre e ajuda
+          </button>
+          <button type="button" className="footer-link" onClick={() => setShowApoio(true)}>
+            Apoie o projeto
+          </button>
         </div>
       </footer>
     </div>
