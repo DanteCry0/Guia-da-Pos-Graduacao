@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import Programas from "./Programas";
 import Quiz from "./Quiz";
+import editais from "./data/editais.json";
+import { notaFor, relatedProgs, usePrograms } from "./programs";
 
 type IconName =
   | "search"
@@ -281,104 +283,15 @@ type Call = {
   org: string;
   level: string;
   area: string;
-  start: string;
+  start?: string;
   end: string;
   detail: string;
   url: string;
+  fonte?: string;
 };
 
-const calls: Call[] = [
-  {
-    name: "PPG em Comunicação Social",
-    org: "PUCRS",
-    level: "Mestrado e Doutorado",
-    area: "Ciências Sociais Aplicadas",
-    start: "2026-09-14",
-    end: "2026-11-23",
-    detail: "25 vagas de mestrado e 15 de doutorado, ingresso em 2027/1.",
-    url: "https://portal.pucrs.br/noticias/ensino/programa-de-pos-graduacao-em-comunicacao-da-pucrs-abre-processo-seletivo-para-mestrado-e-doutorado/",
-  },
-  {
-    name: "Computação Aplicada (Bagé)",
-    org: "Unipampa",
-    level: "Mestrado",
-    area: "Ciências Exatas",
-    start: "2026-11-01",
-    end: "2026-11-23",
-    detail: "12 vagas, presencial e sem taxa de inscrição.",
-    url: "https://www.pebsp.com/5-mestrados-e-doutorados-abertos-na-unipampa-inscricoes-encerram-segunda/",
-  },
-  {
-    name: "Engenharia Elétrica (Alegrete)",
-    org: "Unipampa",
-    level: "Mestrado",
-    area: "Engenharias",
-    start: "2026-10-19",
-    end: "2026-11-27",
-    detail: "20 vagas, presencial e sem taxa de inscrição.",
-    url: "https://www.pebsp.com/5-mestrados-e-doutorados-abertos-na-unipampa-inscricoes-encerram-segunda/",
-  },
-  {
-    name: "Programa Multicêntrico em Ciências Fisiológicas",
-    org: "Unipampa",
-    level: "Mestrado",
-    area: "Saúde",
-    start: "2026-11-12",
-    end: "2026-12-12",
-    detail: "Período de inscrição divulgado em reportagem; confirme no edital.",
-    url: "https://www.pebsp.com/5-mestrados-e-doutorados-abertos-na-unipampa-inscricoes-encerram-segunda/",
-  },
-  {
-    name: "Engenharia (Alegrete)",
-    org: "Unipampa",
-    level: "Mestrado e Doutorado",
-    area: "Engenharias",
-    start: "2026-11-01",
-    end: "2027-01-17",
-    detail: "10 vagas de mestrado e 10 de doutorado.",
-    url: "https://www.pebsp.com/5-mestrados-e-doutorados-abertos-na-unipampa-inscricoes-encerram-segunda/",
-  },
-  {
-    name: "Edital nº 32/2026: pós-graduação stricto sensu",
-    org: "IF Goiano",
-    level: "Mestrado e Doutorado",
-    area: "Várias áreas",
-    start: "2026-12-07",
-    end: "2027-02-05",
-    detail: "163 vagas em vários campi, ingresso em 2027/1.",
-    url: "https://conectaprofessores.com/2026/11/13/mestrado-e-doutorado-gratuitos-if-goiano-publica-edital-com-163-vagas-para-2027/",
-  },
-  {
-    name: "PPG em Comunicação e Indústria Criativa (São Borja)",
-    org: "Unipampa",
-    level: "Mestrado",
-    area: "Ciências Sociais Aplicadas",
-    start: "2026-10-19",
-    end: "2026-11-11",
-    detail: "16 vagas.",
-    url: "https://www.pebsp.com/5-mestrados-e-doutorados-abertos-na-unipampa-inscricoes-encerram-segunda/",
-  },
-  {
-    name: "Doutorado em Economia",
-    org: "UFPB",
-    level: "Doutorado",
-    area: "Ciências Sociais Aplicadas",
-    start: "2026-10-10",
-    end: "2026-11-13",
-    detail: "Edital nº 01/2026, ano letivo 2027.",
-    url: "https://sigaa.ufpb.br/publico/processo-seletivo/editais/",
-  },
-  {
-    name: "Doutorado em Ciência Política e Sociologia (IESP)",
-    org: "UERJ",
-    level: "Doutorado",
-    area: "Ciências Humanas",
-    start: "2026-10-01",
-    end: "2026-11-03",
-    detail: "Turmas 2027.",
-    url: "https://iesp.uerj.br/pos-graduacao/selecao/",
-  },
-];
+// Os editais ficam em src/data/editais.json (fácil de editar).
+const calls = editais as unknown as Call[];
 
 const areas = [...new Set(courses.map((c) => c.area))].sort();
 const states = [...new Set(Object.values(institutions).map((i) => i[1]))].sort();
@@ -402,7 +315,7 @@ type CallStatus = "ab" | "prog" | "enc";
 const statusOrder: Record<CallStatus, number> = { ab: 0, prog: 1, enc: 2 };
 function callState(c: Call, now: Date) {
   const end = parseDay(c.end, true);
-  const status: CallStatus = now < parseDay(c.start) ? "prog" : now > end ? "enc" : "ab";
+  const status: CallStatus = c.start && now < parseDay(c.start) ? "prog" : now > end ? "enc" : "ab";
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const days = Math.round((parseDay(c.end).getTime() - today.getTime()) / 864e5);
   return { status, days, soon: status === "ab" && days <= 7 };
@@ -483,6 +396,14 @@ export default function App() {
     () => [...new Set(courses.filter((c) => !area || c.area === area).map((c) => c.subarea))].sort(),
     [area],
   );
+  const progs = usePrograms();
+  const related = useMemo(() => {
+    if (!progs || !(area || sub) || level === "E" || level === "B") return [];
+    return relatedProgs(progs, area, sub, courses)
+      .filter((p) => !state || p.uf === state)
+      .sort((a, b) => b.nota - a.nota || a.n.localeCompare(b.n, "pt-BR"))
+      .slice(0, 8);
+  }, [progs, area, sub, level, state]);
   const activeFilters = [level, area, sub, state, mode, type].filter(Boolean).length;
   const clearFilters = () => {
     setLevel("");
@@ -514,7 +435,7 @@ export default function App() {
         (a.status === "enc"
           ? b.end.localeCompare(a.end)
           : a.status === "prog"
-            ? a.start.localeCompare(b.start)
+            ? (a.start ?? "").localeCompare(b.start ?? "")
             : a.end.localeCompare(b.end)),
     );
   const openCount = callList.filter((c) => c.status === "ab").length;
@@ -710,6 +631,7 @@ export default function App() {
                   {filtered.map((course) => {
                     const inst = institutions[course.institution];
                     const isSaved = saved.includes(course.id);
+                    const nota = notaFor(course.name, course.levels, inst[0], progs);
                     return (
                       <article className="course-card" key={course.id}>
                         <div className="institution-avatar">
@@ -742,6 +664,11 @@ export default function App() {
                               </span>
                             ))}
                             <span>{course.subarea}</span>
+                            {nota && (
+                              <span className="nota-pill" title="Nota da avaliação da CAPES (3 a 7)">
+                                Nota CAPES {nota}
+                              </span>
+                            )}
                           </div>
                           <div className="course-facts">
                             <span>
@@ -778,6 +705,33 @@ export default function App() {
                     </div>
                   )}
                 </div>
+                {related.length > 0 && (
+                  <div className="related-box">
+                    <h3>Programas reconhecidos pela CAPES{sub ? ` em ${sub}` : ` em ${area}`}</h3>
+                    <div className="prog-grid">
+                      {related.map((p, i) => (
+                        <article className="prog-card" key={p.n + p.sg + i}>
+                          <span className={`nota nota-${p.nota}`} title="Nota CAPES">
+                            {p.nota}
+                          </span>
+                          <div>
+                            <h3>{p.n}</h3>
+                            <p>
+                              {p.sg ? `${p.sg} · ` : ""}
+                              {p.ie} · {p.uf}
+                            </p>
+                            <small>
+                              {p.a} · {p.m}
+                            </small>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                    <button className="more-btn" onClick={() => setTab("programas")}>
+                      Ver todos os programas CAPES
+                    </button>
+                  </div>
+                )}
               </section>
             </div>
           </main>
@@ -795,6 +749,7 @@ export default function App() {
             setLevel("");
             setTab("cursos");
           }}
+          onSeeProgramas={() => setTab("programas")}
         />
       )}
 
@@ -866,7 +821,7 @@ export default function App() {
                   <div className="call-date">
                     <span className={call.soon ? "soon" : call.status}>{badge}</span>
                     <small>{call.status === "prog" ? "Inscrições a partir de" : "Inscrições até"}</small>
-                    <strong>{fmtDate(call.status === "prog" ? call.start : call.end)}</strong>
+                    <strong>{fmtDate(call.status === "prog" ? call.start! : call.end)}</strong>
                     {call.status === "ab" && !call.soon && (
                       <small className="days-left">{call.days} dias restantes</small>
                     )}
@@ -883,12 +838,13 @@ export default function App() {
                         <Icon name="graduation" size={17} /> {call.level}
                       </span>
                       <span>
-                        <Icon name="calendar" size={17} /> {fmtDate(call.start)} — {fmtDate(call.end)}
+                        <Icon name="calendar" size={17} /> {call.start ? `${fmtDate(call.start)} — ${fmtDate(call.end)}` : `até ${fmtDate(call.end)}`}
                       </span>
                     </div>
                     <a href={call.url} target="_blank" rel="noreferrer">
                       Ver edital <Icon name="arrow" size={17} />
                     </a>
+                    {call.fonte && <small className="call-source">Fonte: {call.fonte}</small>}
                   </div>
                 </article>
               );

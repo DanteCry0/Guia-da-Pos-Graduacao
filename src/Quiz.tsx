@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { relatedProgs, usePrograms } from "./programs";
 
 type C = { id: number; institution: string; name: string; levels: string; area: string; subarea: string; mode: string; link?: string };
 type Inst = Record<string, [string, string, string, string]>;
@@ -22,7 +23,7 @@ function recommend(goal: string, now: string, avail: string) {
   return { lv: flex ? ["E"] : ["E", "M"], why: "Para se aprofundar num tema específico, uma especialização é direta; o mestrado vale se quiser pesquisa." };
 }
 
-export default function Quiz({ courses, institutions, onSeeCourses }: { courses: C[]; institutions: Inst; onSeeCourses: (area: string, sub: string) => void }) {
+export default function Quiz({ courses, institutions, onSeeCourses, onSeeProgramas }: { courses: C[]; institutions: Inst; onSeeCourses: (area: string, sub: string) => void; onSeeProgramas: () => void }) {
   const [goal, setGoal] = useState("");
   const [now, setNow] = useState("");
   const [avail, setAvail] = useState("");
@@ -30,6 +31,9 @@ export default function Quiz({ courses, institutions, onSeeCourses }: { courses:
   const [sub, setSub] = useState("");
   const [topic, setTopic] = useState("");
   const [done, setDone] = useState(false);
+  const [uf, setUf] = useState("");
+  const progs = usePrograms();
+  const ufs = [...new Set((progs ?? []).map((p) => p.uf))].filter(Boolean).sort();
 
   const areas = [...new Set(courses.map((c) => c.area))].sort();
   const subs = [...new Set(courses.filter((c) => c.area === area).map((c) => c.subarea))].sort();
@@ -53,8 +57,18 @@ export default function Quiz({ courses, institutions, onSeeCourses }: { courses:
       .filter((x) => x.c.area === area && x.s >= 5)
       .sort((a, b) => b.s - a.s)
       .slice(0, 6);
-    return { rec, ranked };
-  }, [done, goal, now, avail, area, sub, topic, courses]);
+    const prof = (m: string) => norm(m).includes("profission");
+    const progList =
+      progs && rec.lv.some((l) => l === "M" || l === "D")
+        ? relatedProgs(progs, area, sub, courses)
+            .filter((p) => !uf || p.uf === uf)
+            .map((p) => ({ p, s: p.nota + (goal === "Crescer no mercado" && prof(p.m) ? 1.5 : 0) + (goal === "Carreira acadêmica e pesquisa" && !prof(p.m) ? 1.5 : 0) }))
+            .sort((a, b) => b.s - a.s || a.p.n.localeCompare(b.p.n, "pt-BR"))
+            .slice(0, 8)
+            .map((x) => x.p)
+        : [];
+    return { rec, ranked, progList };
+  }, [done, goal, now, avail, area, sub, topic, courses, progs, uf]);
 
   const Q = ({ title, value, set, options }: { title: string; value: string; set: (v: string) => void; options: string[] }) => (
     <fieldset className="quiz-q">
@@ -90,6 +104,17 @@ export default function Quiz({ courses, institutions, onSeeCourses }: { courses:
             <input value={topic} onChange={(e) => { setTopic(e.target.value); setDone(false); }} placeholder="Ex.: inteligência artificial, inclusão, clima" />
           </div>
         </label>
+        <label className="select-wrap">
+          <span>Estado de preferência (opcional)</span>
+          <div>
+            <select value={uf} onChange={(e) => { setUf(e.target.value); setDone(false); }}>
+              <option value="">Qualquer estado</option>
+              {ufs.map((u) => (
+                <option key={u}>{u}</option>
+              ))}
+            </select>
+          </div>
+        </label>
         <button className="more-btn" disabled={!ready} onClick={() => setDone(true)}>
           Ver minhas indicações
         </button>
@@ -122,7 +147,29 @@ export default function Quiz({ courses, institutions, onSeeCourses }: { courses:
               );
             })}
           </div>
+          {res.rec.lv.some((l) => l === "M" || l === "D") && (
+            <>
+              <h3>Programas reconhecidos pela CAPES na sua área</h3>
+              {progs === null && <p>Carregando programas…</p>}
+              {progs !== null && res.progList.length === 0 && <p>Ainda não há dados de programas para essa combinação. Tente outro estado ou outra subárea.</p>}
+              <div className="prog-grid">
+                {res.progList.map((p, i) => (
+                  <article className="prog-card" key={p.n + p.sg + i}>
+                    <span className={`nota nota-${p.nota}`} title="Nota CAPES">{p.nota}</span>
+                    <div>
+                      <h3>{p.n}</h3>
+                      <p>{p.sg ? `${p.sg} · ` : ""}{p.ie} · {p.uf}</p>
+                      <small>{p.a} · {p.m}</small>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
+          )}
           <div className="quiz-actions">
+            <button className="more-btn" onClick={onSeeProgramas}>
+              Ver todos os programas CAPES
+            </button>
             <button className="more-btn" onClick={() => onSeeCourses(area, sub)}>
               Ver todos os cursos dessa área
             </button>

@@ -1,11 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { norm, usePrograms, type Prog } from "./programs";
 
-type Prog = { n: string; ie: string; sg: string; uf: string; a: string; m: string; nota: number };
-const norm = (s: string) =>
-  s
-    .toLocaleLowerCase("pt-BR")
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "");
 const PAGE = 60;
 
 function Field({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {
@@ -25,20 +20,13 @@ function Field({ label, value, onChange, options }: { label: string; value: stri
 }
 
 export default function Programas() {
-  const [data, setData] = useState<Prog[] | null>(null);
+  const data = usePrograms();
   const [q, setQ] = useState("");
   const [nota, setNota] = useState("");
   const [area, setArea] = useState("");
   const [uf, setUf] = useState("");
   const [mod, setMod] = useState("");
   const [shown, setShown] = useState(PAGE);
-
-  useEffect(() => {
-    fetch(import.meta.env.BASE_URL + "data/programas.json")
-      .then((r) => r.json())
-      .then((d: Prog[]) => setData(Array.isArray(d) ? d : []))
-      .catch(() => setData([]));
-  }, []);
 
   const opts = (k: keyof Prog) => [...new Set((data ?? []).map((p) => String(p[k])))].filter(Boolean).sort();
   const list = useMemo(
