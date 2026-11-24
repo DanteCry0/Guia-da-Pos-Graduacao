@@ -1,0 +1,24 @@
+name: Verificar projeto
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Checar tipos
+        run: pnpm typecheck
+      - name: Testes
+        run: pnpm test
+      - name: Build
+        run: pnpm exec vite build
