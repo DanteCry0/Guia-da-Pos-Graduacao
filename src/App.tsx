@@ -8,6 +8,7 @@ import Modal from "./Modal.tsx";
 import { norm as pnorm, notaFor, usePrograms } from "./programs";
 import { courses, duration, institutions, instOf, levelNames, type Course } from "./data/cursos.ts";
 import { callAreas, calls, callState, daysSince, fmtDate, isStale, statusOrder, type Call } from "./lib/editais.ts";
+import { buildIcs, googleCalendarUrl, icsFileName } from "./lib/ics.ts";
 import { reportEditalMailto, suggestEditalMailto } from "./lib/contato.ts";
 import { CONTACT_EMAIL } from "./config.ts";
 
