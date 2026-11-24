@@ -88,6 +88,7 @@ O status (aberto, programado, encerrado) e o aviso de "vence em N dias" são cal
 ```bash
 pnpm test        # roda os testes (Node 22.18 ou mais novo)
 pnpm typecheck   # confere os tipos
+pnpm verificar   # confere se os arquivos estão sem BOM e com JSON válido
 ```
 
 O workflow `.github/workflows/ci.yml` roda tipos, testes e build a cada push. Os testes também validam os dados: um edital com data inexistente, link sem `https://` ou duplicado faz o teste falhar e avisa qual linha corrigir.
@@ -114,3 +115,7 @@ A aba **Sobre e ajuda** (`src/Ajuda.tsx`) reúne FAQ, fontes dos dados, contato 
 - **Pix copia e cola e QR Code:** gerados no próprio navegador (`src/lib/pix.ts` e `src/lib/qr.ts`), com valor e mensagem opcionais. A mensagem vai sem acentos e é cortada no tamanho máximo aceito pelo Pix.
 - **Biblioteca de QR Code:** `uqr` (licença MIT), copiada em `src/vendor/` para não depender de pacote novo.
 - **Teste antes de divulgar:** faça um Pix de R$ 1,00 de outra conta, lendo o QR Code e também pelo copia e cola, e confira o nome que o banco mostra.
+
+## Cuidado ao editar arquivos no Windows
+
+Editores como o Bloco de Notas podem gravar um marcador invisível (BOM) no começo do arquivo. Em `package.json` isso quebra o pnpm e a Vercel com o erro "Invalid package.json". Prefira editar pelo lápis do GitHub, ou salvar como "UTF-8" (sem BOM). O comando `pnpm verificar` (e o passo de verificação do CI) acusa o problema, e `node scripts/verificar-arquivos.mjs --corrigir` remove o BOM.
