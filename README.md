@@ -123,3 +123,8 @@ Editores como o Bloco de Notas podem gravar um marcador invisível (BOM) no come
 ## Nível e data dos programas CAPES
 
 O arquivo da CAPES traz o grau de cada programa (`NM_GRAU_PROGRAMA`). O script grava esse grau em `programas.json` e a data da base em `public/data/programas-meta.json` (ano-base, data da atualização e fonte). O site usa o grau para o filtro de nível e mostra a data na aba Programas CAPES e em Sobre e ajuda. O workflow e o build da Vercel gravam os dois arquivos.
+
+## Créditos e análise de visitantes
+
+- Nome e LinkedIn do autor ficam em `src/config.ts` (`AUTHOR_NAME`, `LINKEDIN_URL`) e aparecem no rodapé e em Sobre e ajuda. Para incluir outras redes, acrescente os links no mesmo arquivo e nos dois componentes.
+- A contagem de visitas usa o **Vercel Web Analytics** pelo script do `index.html` (`/_vercel/insights/script.js`), sem instalar pacote. Ative em **Analytics** no painel da Vercel. Os dados aparecem lá depois de algumas visitas. As abas são a mesma página, então a Vercel conta visitas, e não cliques em cada aba.

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Apoio from "./Apoio.tsx";
-import { CONTACT_EMAIL } from "./config.ts";
+import { AUTHOR_NAME, CONTACT_EMAIL, LINKEDIN_URL } from "./config.ts";
 import { calls, fmtDate } from "./lib/editais.ts";
 import { useProgramMeta } from "./programs.ts";
 import { contatoMailto } from "./lib/contato.ts";
@@ -15,6 +15,7 @@ const FAQ: [string, string][] = [
   ["Há bolsas para mestrado e doutorado?", "Sim. As principais fontes são a CAPES, o CNPq e as fundações estaduais de apoio à pesquisa, como a FAPESP em São Paulo. As bolsas costumam ser distribuídas pelo próprio programa e dependem de disponibilidade e do edital."],
   ["Por que alguns programas têm o botão “Buscar programa”?", "Os dados abertos da CAPES trazem o nome, a instituição, a área e a nota, mas não o site de cada programa. Por isso o botão abre uma busca. Os cursos do catálogo (com link direto) foram cadastrados manualmente."],
   ["Meus cursos salvos somem?", "Ficam guardados no navegador do aparelho que você usa. Eles não sincronizam entre aparelhos e podem ser apagados se você limpar os dados do navegador."],
+  ["O PósGuia coleta dados sobre mim?", "Não pedimos cadastro nem informações pessoais. O site usa o Vercel Web Analytics apenas para contar visitas e páginas acessadas, sem cookies de rastreamento e sem identificar você. Os cursos que você salva ficam só no seu navegador."],
   ["O PósGuia é um site oficial?", "Não. É um projeto independente, sem vínculo com a CAPES, o MEC ou as instituições listadas. Use as informações para pesquisar e confirme sempre nos sites oficiais."],
 ];
 
@@ -90,6 +91,13 @@ export default function Ajuda() {
           </button>
         </p>
         <p className="ajuda-nota">Se o botão não abrir o seu e-mail, copie o endereço e escreva pelo seu provedor.</p>
+        <p>
+          O PósGuia foi criado por {AUTHOR_NAME}.{" "}
+          <a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">
+            Veja o perfil no LinkedIn
+          </a>
+          .
+        </p>
       </section>
 
       <section id="apoio" className="ajuda-bloco" aria-labelledby="apoio-t">

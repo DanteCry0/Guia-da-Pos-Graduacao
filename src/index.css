@@ -1450,3 +1450,8 @@ footer p {
 .apoio-chave{font-size:13px;color:#5b6b64!important;word-break:break-all}.apoio-chave code{background:#eef5f2;padding:2px 6px;border-radius:6px;color:var(--ink)}
 .footer-link{display:block;background:none;border:0;padding:4px 0;color:inherit;font:inherit;text-decoration:underline;cursor:pointer;text-align:left}
 @media (max-width:640px){.apoio-campos{grid-template-columns:1fr}.pix-box{grid-template-columns:1fr;justify-items:center}.pix-qr{width:min(260px,80vw);height:auto}}
+
+/* Botões em forma de link dentro dos blocos de ajuda: texto branco sobre o verde (evita texto verde no fundo verde) */
+.ajuda-bloco p a.more-btn,.ajuda-bloco p a.more-btn:hover,.ajuda-bloco p a.more-btn:visited{color:#fff;text-decoration:none;font-weight:700}
+.footer-credit{margin:10px 0 0;font-size:13px;opacity:.9}
+.footer-credit a{color:inherit;text-decoration:underline;font-weight:600}

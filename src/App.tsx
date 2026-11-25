@@ -10,7 +10,7 @@ import { courses, duration, institutions, instOf, levelNames, type Course } from
 import { callAreas, calls, callState, daysSince, fmtDate, isStale, statusOrder, type Call } from "./lib/editais.ts";
 import { buildIcs, googleCalendarUrl, icsFileName } from "./lib/ics.ts";
 import { reportEditalMailto, suggestEditalMailto } from "./lib/contato.ts";
-import { CONTACT_EMAIL } from "./config.ts";
+import { AUTHOR_NAME, CONTACT_EMAIL, LINKEDIN_URL } from "./config.ts";
 
 type IconName =
   | "search"
@@ -1006,6 +1006,12 @@ export default function App() {
           <button type="button" className="footer-link" onClick={() => setShowApoio(true)}>
             Apoie o projeto
           </button>
+          <p className="footer-credit">
+            Criado por {AUTHOR_NAME} ·{" "}
+            <a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer" aria-label={`LinkedIn de ${AUTHOR_NAME} (abre em nova aba)`}>
+              LinkedIn
+            </a>
+          </p>
         </div>
       </footer>
     </div>
